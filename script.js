@@ -102,9 +102,10 @@
       const data = await res.json();
       const events = (data.events || []).map(ev => ({
         summary: ev.title,
-        start: ev.start ? new Date(ev.start) : null,
-        end: ev.end ? new Date(ev.end) : null,
+        start: ev.start ? new Date(ev.start * 1000) : null, // API liefert Sekunden
+        end: ev.stop ? new Date(ev.stop * 1000) : null,
         location: ev.location,
+        persons: ev.persons,
       }));
 
       render(events);
