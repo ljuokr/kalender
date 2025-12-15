@@ -1,5 +1,8 @@
 (() => {
-  const API_URL = 'https://apps.phbern.ch/raumkalender/api/v1/resource/events';
+  const API_ENDPOINTS = [
+    '/api/events', // Proxy (gleiche Origin)
+    'https://apps.phbern.ch/raumkalender/api/v1/resource/events', // Direkt
+  ];
   const RESOURCE_ID = 8270866;
 
   const dateInput = document.getElementById('date-picker');
@@ -89,17 +92,11 @@
     try {
       setStatus('Lade Termine...', 'info');
       const selected = new Date(`${dateInput.value}T00:00:00`);
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          resource: RESOURCE_ID,
-          datepickerValue: formatSwiss(selected),
-        }),
+      const data = await postWithFallback({
+        resource: RESOURCE_ID,
+        datepickerValue: formatSwiss(selected),
       });
 
-      if (!res.ok) throw new Error(`API-Fehler ${res.status}`);
-      const data = await res.json();
       const events = (data.events || []).map(ev => ({
         summary: ev.title,
         start: ev.start ? new Date(ev.start * 1000) : null, // API liefert Sekunden
@@ -117,3 +114,23 @@
 
   update();
 })();
+
+// Versuche Proxy, falle dann auf Direkt-API zurück
+async function postWithFallback(body) {
+  let lastError;
+  for (const url of API_ENDPOINTS) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      return await res.json();
+    } catch (err) {
+      lastError = err;
+      console.warn(`API-Fetch fehlgeschlagen für ${url}:`, err);
+    }
+  }
+  throw lastError || new Error('API nicht erreichbar');
+}
