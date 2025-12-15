@@ -1,6 +1,6 @@
 (() => {
-  const ICS_SOURCE = 'https://apps.phbern.ch/raumkalender/room/8270866.ics';
-  const PROXY_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(ICS_SOURCE);
+  const API_URL = 'https://apps.phbern.ch/raumkalender/api/v1/resource/events';
+  const RESOURCE_ID = 8270866;
 
   const dateInput = document.getElementById('date-picker');
   const eventsEl = document.getElementById('events');
@@ -18,59 +18,20 @@
     statusEl.className = `status ${type}`;
   }
 
-  async function loadICS() {
-    setStatus('Lade Termine...', 'info');
-    try {
-      const res = await fetch(PROXY_URL);
-      if (!res.ok) throw new Error('Proxy fehlgeschlagen');
-      return await res.text();
-    } catch (err) {
-      console.warn('Proxy fehlgeschlagen, versuche Direktzugriff', err);
-      const fallback = await fetch(ICS_SOURCE);
-      if (!fallback.ok) throw new Error('ICS nicht erreichbar');
-      return await fallback.text();
-    }
-  }
-
-  function unfold(text) {
-    return text.replace(/\r\n[ \t]/g, '').replace(/\r\n/g, '\n');
-  }
-
-  function parseICS(text) {
-    const events = [];
-    let cur = null;
-
-    const lines = unfold(text).split('\n');
-    for (const line of lines) {
-      if (line.startsWith('BEGIN:VEVENT')) {
-        cur = {};
-      } else if (line.startsWith('END:VEVENT')) {
-        if (cur && cur.start) events.push(cur);
-        cur = null;
-      } else if (cur) {
-        if (line.startsWith('SUMMARY:')) cur.summary = line.slice(8).trim();
-        else if (line.startsWith('DTSTART')) cur.start = toDate(line.split(':')[1]);
-        else if (line.startsWith('DTEND')) cur.end = toDate(line.split(':')[1]);
-        else if (line.startsWith('LOCATION:')) cur.location = line.slice(9).trim();
-      }
-    }
-    return events;
-  }
-
-  function toDate(val) {
-    if (!val) return null;
-    const m = val.match(/(\d{4})(\d{2})(\d{2})T?(\d{2})?(\d{2})?(\d{2})?/);
-    if (!m) return null;
-    const [, Y, M, D, h = '00', mi = '00', s = '00'] = m.map(Number);
-    return new Date(Y, M - 1, D, h, mi, s);
-  }
-
   function formatDateInput(date) {
     return [
       date.getFullYear(),
       String(date.getMonth() + 1).padStart(2, '0'),
       String(date.getDate()).padStart(2, '0'),
     ].join('-');
+  }
+
+  function formatSwiss(date) {
+    return [
+      String(date.getDate()).padStart(2, '0'),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      date.getFullYear(),
+    ].join('.');
   }
 
   function formatTime(date) {
@@ -126,8 +87,26 @@
 
   async function update() {
     try {
-      const ics = await loadICS();
-      const events = parseICS(ics);
+      setStatus('Lade Termine...', 'info');
+      const selected = new Date(`${dateInput.value}T00:00:00`);
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          resource: RESOURCE_ID,
+          datepickerValue: formatSwiss(selected),
+        }),
+      });
+
+      if (!res.ok) throw new Error(`API-Fehler ${res.status}`);
+      const data = await res.json();
+      const events = (data.events || []).map(ev => ({
+        summary: ev.title,
+        start: ev.start ? new Date(ev.start) : null,
+        end: ev.end ? new Date(ev.end) : null,
+        location: ev.location,
+      }));
+
       render(events);
     } catch (err) {
       console.error(err);
