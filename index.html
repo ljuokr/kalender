@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Raum 8270866 | Termine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <p class="eyebrow">PHBern · Raum 8270866</p>
+      <h1>Termine anzeigen</h1>
+      <p class="lede">Alle Buchungen direkt aus dem offiziellen Raumkalender, filterbar nach Datum.</p>
+    </header>
+
+    <section class="panel">
+      <div class="controls">
+        <label class="field">
+          <span>Datum</span>
+          <input type="date" id="date-picker" aria-label="Datum auswählen">
+        </label>
+        <button id="reload" type="button">Neu laden</button>
+      </div>
+      <div id="status" class="status info">Bereit</div>
+    </section>
+
+    <section id="events" class="events" aria-live="polite"></section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
