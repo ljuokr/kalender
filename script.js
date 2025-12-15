@@ -1,7 +1,8 @@
 (() => {
   const API_ENDPOINTS = [
-    '/api/events', // Proxy (gleiche Origin)
-    'https://apps.phbern.ch/raumkalender/api/v1/resource/events', // Direkt
+    'https://<your-worker>.workers.dev/api/events', // Cloudflare Worker (ersetzen)
+    '/api/events', // Lokaler/gleiche-Origin-Proxy
+    'https://apps.phbern.ch/raumkalender/api/v1/resource/events', // Direkt (CORS-anfällig)
   ];
   const RESOURCE_ID = 8270866;
 
