@@ -3,31 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Raum 8270866 | Termine</title>
-  <link rel="stylesheet" href="style.css">
+  <meta http-equiv="cache-control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="pragma" content="no-cache">
+  <meta http-equiv="expires" content="0">
+  <title>Raumkalender</title>
+  <link rel="stylesheet" href="style.css?v=20260430revert">
 </head>
 <body>
   <main class="page">
-    <header class="hero">
-      <p class="eyebrow">PHBern · Raum 8270866</p>
-      <h1>Termine anzeigen</h1>
-      <p class="lede">Alle Buchungen direkt aus dem offiziellen Raumkalender, filterbar nach Datum.</p>
+    <!-- Topbar: Tabs als Buttons + Datenstand/Link/Disclaimer rechts gestapelt -->
+    <header class="topbar">
+      <nav class="tabs" role="tablist">
+        <button type="button" class="tab" data-tab="aushang-txg" role="tab" aria-selected="false">Aushang Textil</button>
+        <button type="button" class="tab active" data-tab="aushang-tcg" role="tab" aria-selected="true">Aushang Technisch</button>
+        <button type="button" class="tab" data-tab="week" role="tab" aria-selected="false">Woche</button>
+        <button type="button" class="tab" data-tab="semester" role="tab" aria-selected="false">Halbtag</button>
+        <button type="button" class="tab" data-tab="halfyear" role="tab" aria-selected="false">Semester</button>
+      </nav>
+      <div class="topbar-meta">
+        <span class="topbar-stand">Datenstand <strong id="data-stand">—</strong> · <a class="topbar-link" href="https://apps.phbern.ch/raumkalender/" target="_blank" rel="noopener">↗ offizieller Raumkalender</a></span>
+        <span class="topbar-disclaimer">⚠ experimentell, ohne Gewähr — im Zweifel gilt der offizielle Kalender</span>
+      </div>
     </header>
 
-    <section class="panel">
-      <div class="controls">
-        <label class="field">
-          <span>Datum</span>
-          <input type="date" id="date-picker" aria-label="Datum auswählen">
-        </label>
-        <button id="reload" type="button">Neu laden</button>
+    <!-- Toolbar: tab-spezifische Controls + (bei Bedarf) Räume -->
+    <div class="toolbar">
+      <div class="tb-row" id="controls-week">
+        <button type="button" id="week-prev" class="btn-icon" aria-label="Vorherige Woche">◀</button>
+        <input type="date" id="week-date">
+        <button type="button" id="week-next" class="btn-icon" aria-label="Nächste Woche">▶</button>
+        <button type="button" id="week-today" class="btn-icon btn-today" title="Aktuelle Woche">Heute</button>
       </div>
-      <div id="status" class="status info">Bereit</div>
-    </section>
 
-    <section id="events" class="events" aria-live="polite"></section>
+      <div class="tb-row hidden" id="controls-semester">
+        <label class="inline-field">
+          <span>Tag</span>
+          <select id="sem-weekday">
+            <option value="0">Mo</option><option value="1">Di</option><option value="2">Mi</option>
+            <option value="3">Do</option><option value="4">Fr</option>
+          </select>
+        </label>
+        <label class="inline-field">
+          <span>Halbtag</span>
+          <select id="sem-half">
+            <option value="am">Vormittag (06–12)</option>
+            <option value="pm" selected>Nachmittag (12–18)</option>
+            <option value="ev">Abend (18–22)</option>
+          </select>
+        </label>
+        <label class="inline-field">
+          <span>Sem.</span>
+          <select id="sem-semester">
+            <option value="FS26">FS26</option>
+            <option value="HS26" selected>HS26</option>
+          </select>
+        </label>
+        <label class="inline-toggle">
+          <input type="checkbox" id="sem-only-busy" checked>
+          <span>Nur belegte Tage</span>
+        </label>
+      </div>
+
+      <div class="tb-row hidden" id="controls-halfyear">
+        <label class="inline-field">
+          <span>Semester</span>
+          <select id="hy-semester">
+            <option value="FS26">FS26 (inkl. Blocktage)</option>
+            <option value="HS26" selected>HS26</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="tb-row hidden" id="controls-aushang">
+        <div class="sem-toggle" role="tablist" aria-label="Semester wählen">
+          <button type="button" class="sem-btn" data-sem="FS26" role="tab" aria-selected="false">FS26</button>
+          <button type="button" class="sem-btn active" data-sem="HS26" role="tab" aria-selected="true">HS26</button>
+        </div>
+        <button type="button" id="au-print" title="Als PDF speichern (A4 quer, eine Seite)">📄 PDF</button>
+        <button type="button" id="au-doc" title="Als Word-Datei (.doc) herunterladen">📝 Word</button>
+        <button type="button" id="au-xls" title="Als Excel-Datei (.xls) herunterladen">📊 Excel</button>
+      </div>
+
+      <!-- Räume-Reihe (nur bei Woche/Halbtag/Semester sichtbar) -->
+      <div class="tb-row tb-rooms-row" id="rooms-row">
+        <div id="room-list" class="room-list"></div>
+      </div>
+
+      <div id="status" class="status info hidden">Bereit</div>
+    </div>
+
+    <section id="view-week" class="view"></section>
+    <section id="view-semester" class="view hidden"></section>
+    <section id="view-halfyear" class="view hidden"></section>
+    <section id="view-aushang" class="view hidden"></section>
   </main>
 
-  <script src="script.js"></script>
+  <script src="xlsx.bundle.js"></script>
+  <script src="docx.umd.js"></script>
+  <script src="data.js?v=20260430revert"></script>
+  <script src="script.js?v=20260430revert"></script>
 </body>
 </html>

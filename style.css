@@ -1,208 +1,1027 @@
 :root {
-  --bg: #0c1326;
-  --panel: rgba(255, 255, 255, 0.04);
-  --card: #101a34;
-  --accent: #6dd3ff;
-  --accent-2: #ffb359;
-  --text: #e5ecff;
-  --muted: #99a5c7;
-  --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  --radius: 16px;
-  font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  /* PHBern-Farbpalette (aus offizieller App extrahiert) */
+  --phbern-red: #ac0101;
+  --phbern-red-dark: #8a0101;
+  --phbern-red-darker: #930101;
+  --phbern-blue: #44748b;
+  --phbern-magenta: #b36b93;
+  --phbern-yellow: #ffe700;
+
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --text: #000000;
+  --muted: #000000;
+  --muted-2: #000000;
+  --border: #dee2e6;
+  --border-strong: #c8c8c8;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+  --radius: 4px;
+
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-body {
+html, body {
   margin: 0;
-  min-height: 100vh;
-  background: radial-gradient(150% 120% at 15% 20%, rgba(109, 211, 255, 0.2), transparent 40%),
-              radial-gradient(120% 100% at 90% 10%, rgba(255, 179, 89, 0.18), transparent 45%),
-              linear-gradient(145deg, #0a0f1f 0%, #0e1831 60%, #0b1024 100%);
+  background: var(--bg);
   color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
 }
 
 .page {
-  max-width: 900px;
-  padding: 40px 20px 60px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
-.hero {
-  margin-bottom: 24px;
-}
-
-.eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-size: 12px;
-  color: var(--accent);
-  margin: 0 0 6px;
-}
-
-h1 {
-  margin: 0 0 8px;
-  font-size: 32px;
-}
-
-.lede {
-  margin: 0;
-  color: var(--muted);
-  max-width: 620px;
-}
-
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px 20px;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(8px);
-}
-
-.controls {
+/* ---------- Topbar (neutral, Tabs als Buttons) ---------- */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 16px;
   display: flex;
+  align-items: flex-start;
   gap: 12px;
-  flex-wrap: wrap;
+  min-height: 38px;
+}
+/* Rechter Bereich: Datenstand, Raumkalender-Link und Disclaimer untereinander */
+.topbar-meta {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
   align-items: flex-end;
-}
-
-.field {
-  display: grid;
-  gap: 6px;
+  gap: 1px;
+  font-size: 11px;
   color: var(--muted);
-  font-size: 14px;
+  text-align: right;
+}
+.topbar-stand { white-space: nowrap; }
+.topbar-stand strong { color: var(--text); font-weight: 700; }
+.topbar-link {
+  color: var(--phbern-red);
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.topbar-link:hover { text-decoration: underline; }
+/* Disclaimer als kleine Fussnote unter den Meta-Zeilen */
+.topbar-disclaimer {
+  font-size: 9.5px;
+  color: var(--muted-2);
+  font-style: italic;
+  max-width: 360px;
+  line-height: 1.25;
+  margin-top: 1px;
+  white-space: normal;
+}
+.topbar-disclaimer a { color: var(--muted-2); text-decoration: underline; }
+
+/* Status-Pille — info/ok werden komplett ausgeblendet, nur Errors sind sichtbar
+   (Position: schwebend rechts unten, damit nichts kollidiert) */
+#status.status { display: none; }
+#status.status.error {
+  display: inline-flex;
+  position: fixed;
+  bottom: 12px;
+  right: 14px;
+  z-index: 9000;
+  box-shadow: 0 2px 6px rgba(172,1,1,0.25);
 }
 
-input[type="date"] {
-  background: var(--card);
+/* ---------- Toolbar (kompakt) ---------- */
+.toolbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 5px 16px;
+  display: grid;
+  gap: 4px;
+}
+.tb-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tb-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.tb-label small {
+  color: var(--phbern-red);
+  font-weight: 700;
+  margin-left: 2px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tb-spacer { flex: 1; }
+
+/* Tabs — als klare Buttons in der Topbar */
+.tabs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.tab {
+  background: #f0f1f3;
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 12px;
-  font-size: 16px;
-  min-width: 200px;
-  outline: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: inherit;
+  height: 28px;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.tab:hover:not(.active) {
+  background: #e5e7eb;
+  border-color: var(--border-strong);
+}
+.tab.active {
+  background: var(--phbern-red);
+  color: #fff;
+  border-color: var(--phbern-red-dark);
+  box-shadow: 0 1px 2px rgba(172, 1, 1, 0.25);
 }
 
-input[type="date"]:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(109, 211, 255, 0.2);
+/* Räume-Chips: kein umschliessendes Element mehr — Chips zeigen Farbe selbst */
+.room-list { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.room-group {
+  /* kein farbiger Container, kein Rahmen, kein Hintergrund */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
+.room-group-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+.room-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 6px;
+  background: var(--surface);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  user-select: none;
+  white-space: nowrap;
+  color: var(--text);
+  height: 28px;
+}
+.room-chip input { width: 12px; height: 12px; }
+.room-chip .swatch { width: 7px; height: 7px; }
+.room-chip .room-ext {
+  text-decoration: none;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 0 2px;
+  margin-left: 1px;
+}
+.room-chip .room-ext:hover { color: var(--phbern-red); }
+.room-chip.chip-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.room-chip.chip-disabled input { cursor: not-allowed; }
+.room-inst {
+  display: inline-block;
+  font-size: 8px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--phbern-red);
+  padding: 1px 4px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  margin-left: 2px;
+}
+.meta-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--phbern-red);
+  padding: 1px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.04em;
+  margin-left: 4px;
+}
+.room-chip:hover { border-color: var(--room-color); }
+.room-chip:has(input:checked) {
+  border-color: var(--room-color);
+  background: color-mix(in srgb, var(--room-color) 15%, var(--surface));
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.room-chip input { accent-color: var(--room-color); margin: 0; cursor: pointer; }
+.room-chip .swatch {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--room-color);
+  border: 1px solid rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+
+/* Inputs — prominenter für Datum/Halbtag/Sem-Wahl in Woche+Halbtag */
+input[type="date"], select {
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  outline: none;
+  font-family: inherit;
+  height: 30px;
+}
+input[type="date"]:hover, select:hover {
+  border-color: var(--phbern-red);
+}
+input[type="date"]:focus, select:focus {
+  border-color: var(--phbern-red);
+  box-shadow: 0 0 0 2px rgba(172, 1, 1, 0.18);
+}
+.inline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 700;
+}
+.inline-field span {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  color: var(--muted);
+}
+.inline-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  padding: 0 8px;
+  height: 30px;
+}
+.inline-toggle input { width: 16px; height: 16px; cursor: pointer; }
+.week-meta-hint { color: var(--muted); font-size: 11px; font-style: italic; }
 
 button {
-  background: linear-gradient(120deg, var(--accent), #4fb3e6);
-  color: #0a0f1f;
+  background: var(--phbern-red);
+  color: #fff;
   border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 16px;
+  border-radius: 3px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+button:hover { background: var(--phbern-red-dark); }
+
+.btn-icon {
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--border-strong);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 4px;
+}
+.btn-icon:hover {
+  background: var(--surface);
+  border-color: var(--phbern-red);
+  color: var(--phbern-red);
+}
+/* "Heute"-Button: prominent, breiter, mit roter Akzentfarbe */
+.btn-today {
+  width: auto;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--phbern-red);
+  color: #fff !important;
+  border-color: var(--phbern-red-dark) !important;
+}
+.btn-today:hover { background: var(--phbern-red-dark); }
+
+/* Semester-Toggle (Aushang) — prominent zwei Buttons HS26 / FS26 */
+.sem-toggle {
+  display: inline-flex;
+  background: #f0f1f3;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+.sem-btn {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  padding: 4px 14px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease;
-  box-shadow: 0 12px 30px rgba(109, 211, 255, 0.35);
+  border-radius: 4px;
+  font-family: inherit;
+  height: 26px;
+  letter-spacing: 0.02em;
+  transition: background 0.1s, color 0.1s;
+}
+.sem-btn:hover:not(.active) { background: rgba(0,0,0,0.05); }
+.sem-btn.active {
+  background: var(--phbern-red);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(172,1,1,0.25);
 }
 
-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 36px rgba(109, 211, 255, 0.45);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
+/* Status (Pille) */
 .status {
-  margin-top: 14px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 10px;
   border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.status.error {
-  border-color: rgba(255, 104, 104, 0.5);
-  color: #ffc1c1;
-}
-
-.status.ok {
-  border-color: rgba(109, 211, 255, 0.5);
-  color: var(--text);
-}
-
-.events {
-  margin-top: 18px;
-  display: grid;
-  gap: 12px;
-}
-
-.event-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: 6px;
-}
-
-.event-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-}
-
-.event-title {
-  font-weight: 700;
-  font-size: 17px;
-  margin: 0;
-}
-
-.event-time {
-  color: var(--accent-2);
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.event-meta {
+  background: var(--surface);
   color: var(--muted);
-  font-size: 13px;
+  white-space: nowrap;
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+}
+.status.error {
+  border-color: var(--phbern-red);
+  color: var(--phbern-red);
+  background: #fff;
+}
+.status.ok {
+  border-color: var(--phbern-blue);
+  color: var(--phbern-blue);
+  background: #fff;
 }
 
+/* ---------- Views ---------- */
+.view { padding: 6px 16px 16px; }
+.view.hidden, .hidden { display: none !important; }
 .empty {
   text-align: center;
   color: var(--muted);
   border: 1px dashed var(--border);
   border-radius: var(--radius);
   padding: 30px 16px;
+  background: var(--surface);
 }
 
-@media (max-width: 600px) {
-  .page {
-    padding: 28px 16px 50px;
-  }
+/* ---------- Wochenansicht ---------- */
+.week-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.week-meta strong { color: var(--text); font-size: 12px; }
+.week-meta-links { color: var(--muted); }
+.week-meta-links a { color: var(--phbern-red); text-decoration: none; font-weight: 600; }
+.week-meta-links a:hover { text-decoration: underline; }
 
-  h1 {
-    font-size: 26px;
-  }
+.week-grid {
+  display: grid;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  grid-template-columns: 28px repeat(var(--day-cols), 1fr);
+}
 
-  .panel {
-    padding: 14px;
-  }
+.wg-corner {
+  background: #ececec;
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 3px solid var(--phbern-red);
+  height: 30px;
+}
+.wg-day-hdr {
+  background: linear-gradient(to bottom, #f0f0f0 0%, #e8e8e8 100%);
+  border-right: 1px solid var(--border-strong);
+  border-bottom: 3px solid var(--phbern-red);
+  padding: 1px 2px 0;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 30px;
+  color: var(--text);
+}
+.wg-day-hdr:last-of-type { border-right: none; }
+.wg-day-name {
+  font-weight: 700;
+  font-size: 10px;
+  text-align: center;
+  margin-bottom: 1px;
+  color: var(--text);
+  line-height: 1.1;
+}
+.wg-day-name span { color: var(--muted); font-weight: 500; margin-left: 3px; font-size: 9px; }
+.wg-day-rooms {
+  display: grid;
+  grid-template-columns: repeat(var(--room-cols), 1fr);
+  gap: 1px;
+  font-size: 8px;
+  flex: 1;
+}
+.wg-room-slot {
+  background: var(--room-color);
+  color: #0a0f1f; /* per JS überschrieben */
+  font-weight: 700;
+  text-align: center;
+  border-radius: 2px;
+  padding: 0;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  .controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
+/* Stunden-Spalte */
+.wg-time-col {
+  border-right: 1px solid var(--border);
+  background: #fafafa;
+}
+.wg-time {
+  font-size: 9px;
+  color: var(--muted);
+  padding: 0 3px 0 0;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  line-height: 36px; /* 4 × 9px */
+  box-sizing: border-box;
+  font-weight: 600;
+}
 
-  button {
-    width: 100%;
-    text-align: center;
-  }
+/* Tag-Spalten + Sub-Spalten */
+.wg-day-col {
+  position: relative;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+.wg-room-col {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px dotted rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.wg-room-col:last-child { border-right: none; }
+
+/* Events */
+.wg-event {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-size: 9px;
+  line-height: 1.15;
+  color: #0a0f1f; /* überschrieben per inline color (textColorFor) */
+  font-weight: 600;
+  overflow: hidden;
+  cursor: default;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  box-sizing: border-box;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+}
+.wg-event strong {
+  font-size: 8px;
+  display: block;
+  opacity: 0.95;
+  font-weight: 700;
+}
+.wg-event em {
+  font-style: normal;
+  opacity: 0.88;
+  font-weight: 500;
+  font-size: 8.5px;
+}
+
+/* ---------- Semestertabelle ---------- */
+.sem-meta {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.sem-meta strong { color: var(--text); font-size: 15px; }
+.sem-date a { color: inherit; text-decoration: none; }
+.sem-date a:hover { color: var(--phbern-red); text-decoration: underline; }
+
+.sem-table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.sem-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  min-width: 500px;
+  table-layout: fixed;
+}
+.sem-table th, .sem-table td {
+  width: 1%;             /* zwingt gleiche Breite bei table-layout: fixed */
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+.sem-table th {
+  background: #f5f5f5;
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-strong);
+  position: sticky; top: 0;
+  color: var(--text);
+}
+.sem-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.sem-table tr:hover td { background: #fafafa; }
+.sem-date { white-space: nowrap; color: var(--muted); font-weight: 600; }
+.cell-free { color: var(--muted-2); font-style: italic; }
+.cell-ev {
+  margin-bottom: 4px;
+  padding: 4px 8px 14px; /* extra Bottom-Padding für den ↗-Link unten links */
+  background: #f5f5f5;
+  border-radius: var(--radius);
+  border-left: 3px solid var(--phbern-red);
+  font-size: 11px;
+  color: var(--text);
+  position: relative;
+}
+.cell-ev strong { color: var(--phbern-red); display: block; font-size: 10px; font-weight: 700; }
+.cell-ev em { font-style: normal; color: var(--muted); font-size: 10px; }
+
+/* ---------- Semester gesamt (Stundenplan mit Mini-Feldern pro KW) ---------- */
+.over-grid .ov-day-hdr { height: 38px; padding: 1px 0 0; }
+.over-grid .wg-day-name { margin-bottom: 0; }
+/* KW-Tick-Reihe DIREKT unter dem Tagesnamen — KW oben statt unten */
+.ov-kw-row-top {
+  position: relative;
+  flex: 1;
+  background: #fafafa;
+  border-top: 1px solid var(--border);
+  height: 18px;
+}
+/* "KW"-Beschriftung in der Ecke oben links */
+.ov-corner {
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: center;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+.ov-room-col {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px dotted rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+.ov-room-col:last-child { border-right: none; }
+.ov-mini {
+  position: absolute;
+  border-radius: 1px;
+  cursor: default;
+  opacity: 0.95;
+}
+.ov-mini:hover {
+  outline: 1px solid #000;
+  outline-offset: -1px;
+  z-index: 5;
+}
+/* Einzel-Wochen: senkrecht beschriftet */
+.ov-mini-vertical {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1px 0;
+}
+.ov-mini-vertical span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-overflow: clip;
+  overflow: hidden;
+  max-height: 100%;
+}
+.ov-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0f1f; /* per JS überschrieben */
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  padding: 1px 3px;
+  overflow: hidden;
+  flex-direction: column;
+  line-height: 1.2;
+  gap: 2px;
+}
+.ov-full > span,
+.ov-full > strong,
+.ov-full > em {
+  display: block;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ov-full strong { font-size: 9px; opacity: 0.85; }
+.ov-full .ov-title { font-size: 10px; font-weight: 700; white-space: normal; line-height: 1.2; max-height: calc(100% - 20px); overflow: hidden; }
+.ov-full em { font-style: normal; opacity: 0.8; font-size: 9px; font-weight: 500; }
+
+/* Variante: einzeilig hochkant, wenn Höhe nur 1h und Breite klein */
+.ov-full-vertical span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  text-overflow: clip;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  width: auto;
+}
+.ov-full-vertical { padding: 2px 0; }
+/* Mehrzeilige Variante linksbündig (für mehr Lesbarkeit) */
+.ov-full-multiline {
+  align-items: stretch;
+  text-align: left;
+  padding: 3px 5px;
+  justify-content: flex-start;
+}
+
+/* KW-Footer in der Übersicht */
+.ov-kw-footer {
+  position: relative;
+  background: #f5f5f5;
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border-strong);
+  height: 16px;
+}
+.ov-kw-sub {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px dotted rgba(0,0,0,0.08);
+}
+.ov-kw-sub:last-child { border-right: none; }
+.ov-kw-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--muted);
+  font-weight: 600;
+  border-left: 1px solid rgba(0,0,0,0.08);
+}
+.ov-kw-tick:first-child { border-left: none; }
+.ov-kw-corner {
+  background: #f5f5f5;
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border-strong);
+  font-size: 9px;
+  color: var(--muted);
+  font-weight: 700;
+  text-align: right;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ---------- Aushang (TcG/TxG) — nahe an Word-Vorlage ---------- */
+.aushang {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 24px 24px;
+  font-family: "Calibri", "Segoe UI", sans-serif;
+  color: #1a1a1a;
+}
+.au-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--phbern-red);
+}
+/* Top-Zeile: Titel links + Legende oben rechts */
+.au-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+.au-top-row .au-title { margin: 0; flex: 1; }
+.au-leads {
+  font-size: 12px;
+  color: var(--text);
+  display: grid;
+  gap: 2px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+}
+.au-leads strong { color: var(--phbern-red); }
+
+/* Legende: 3 farbige Zellen vertikal gestapelt — sehr kompakt, oben rechts.
+   Nimmt nur den nötigen Platz, damit der Titel links nicht vergrössert werden muss. */
+.au-legend {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: auto;
+  gap: 0;
+  border: 1px solid #999;
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: max-content;
+  max-width: 150px;
+}
+.au-legend-cell {
+  padding: 1px 6px;
+  font-size: 8.5px;
+  font-weight: 600;
+  text-align: center;
+  border-bottom: 1px solid #999;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.au-legend-cell:last-child { border-bottom: none; }
+@media print {
+  .au-top-row { gap: 6pt; margin-bottom: 3pt; }
+  .au-legend { max-width: 80pt; }
+  .au-legend-cell { padding: 0.5pt 3pt; font-size: 6pt; line-height: 1.2; }
+}
+
+.au-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10.5px;
+  table-layout: fixed;
+  margin-bottom: 12px;
+}
+.au-grid th, .au-grid td {
+  border: 1px solid #999;
+  padding: 2px 3px;
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+/* Stunden-Zeilen höher (40px statt 32px), damit Modul-Titel nicht vertikal gestaucht werden */
+.au-grid .au-tr-hour { height: 40px; }
+.au-grid .au-tr-hour td { height: 40px; line-height: 1.15; }
+.au-th-time { background: #f0f0f0; }
+.au-th-day {
+  background: #e8e8e8;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+.au-th-room {
+  background: #f5f5f5;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+/* Zeit-Spalte: gleiche Schrift wie Tage-Header — beide fett, gleiche Größe */
+.au-td-time {
+  background: #f5f5f5;
+  font-size: 11px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text);
+  vertical-align: middle;
+}
+.au-td-cell {
+  height: 40px;
+  background: #fff;
+  position: relative; /* Anker für .ev-link */
+}
+.au-ev {
+  font-size: 9.5px;
+  line-height: 1.05;
+  text-align: left;
+  position: relative;
+}
+.au-ev-title { font-weight: 700; }
+.au-ev-pers { opacity: 0.92; font-size: 9px; }
+.au-ev-kw { font-size: 8.5px; opacity: 0.85; font-style: italic; margin-top: 1px; }
+
+/* Extras-Container: 3-Spalten-Raster, beide Sections IMMER auf Zeile 1.
+   Wide = cols 1-2, Narrow = col 3. Mit `grid-row: 1` springt narrow nicht
+   in eine neue Zeile, falls es im DOM vor wide eingefügt wird (dynamisches
+   Layout: Raum mit mehr Items wird breit). */
+.au-extras-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-auto-flow: dense;
+  gap: 0 14px;
+  align-items: start;
+}
+.au-extra-wide   { grid-column: 1 / span 2; grid-row: 1; }
+.au-extra-narrow { grid-column: 3 / span 1; grid-row: 1; }
+/* Inhalt: 1 Spalte beim schmalen Raum, 2 Spalten beim breiten */
+.au-extra-list-1col {
+  display: block;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.au-extra-list-1col .au-extra-item { margin-bottom: 4px; }
+/* CSS-Multi-Columns statt Grid: Umbrüche in einer Spalte beeinflussen die andere
+   Spalte NICHT — jede Spalte fliesst unabhängig top→bottom. */
+.au-extra-list-2col {
+  column-count: 2;
+  column-gap: 14px;
+  font-size: 11px;
+  line-height: 1.3;
+}
+.au-extra-list-2col .au-extra-item {
+  break-inside: avoid;
+  margin-bottom: 4px;
+  display: block;
+}
+@media (max-width: 700px) {
+  .au-extras-grid { grid-template-columns: 1fr; }
+  .au-extra-narrow, .au-extra-wide { grid-column: 1 / -1; }
+  .au-extra-list-2col { grid-template-columns: 1fr; }
+}
+.au-stand {
+  margin-top: 14px;
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+  text-align: right;
+}
+.au-stand a { color: var(--muted); text-decoration: underline; }
+@media print {
+  .au-stand { font-size: 7pt; margin-top: 6pt; }
+}
+.au-extra-item { padding: 1px 0; }
+.au-extra h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--phbern-red);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+  line-height: 1.15;
+}
+.au-extra ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.au-extra li { margin: 0; padding: 0; }
+
+/* Print / PDF: Aushang auf A4 quer (eine Seite) */
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+  html, body { background: #fff !important; }
+  body { font-size: 8pt; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .topbar, .disclaimer, .toolbar { display: none !important; }
+  .view { padding: 0 !important; margin: 0 !important; }
+  .view.hidden { display: none !important; }
+  .aushang { box-shadow: none; border: none; padding: 0; max-width: 100%; }
+  .au-title { font-size: 12pt; margin-bottom: 4pt; }
+  .au-leads { font-size: 7.5pt; padding-bottom: 3pt; margin-bottom: 5pt; gap: 1pt; }
+  .au-grid { font-size: 7.5pt; margin-bottom: 6pt; }
+  .au-grid th, .au-grid td { padding: 1pt 2pt; }
+  .au-th-time { width: 32pt; }
+  .au-td-time { font-size: 7pt; }
+  .au-td-cell { height: auto; }
+  .au-ev { font-size: 7pt; line-height: 1.1; }
+  .au-ev-title { font-weight: 700; }
+  .au-ev-pers { font-size: 6.8pt; }
+  .au-ev-kw { font-size: 6.5pt; }
+  .au-extra { margin-top: 4pt; page-break-inside: avoid; }
+  .au-extra h3 { font-size: 8pt; margin-bottom: 1pt; }
+  .au-extras-grid { display: grid; grid-template-columns: 1fr 1fr 1fr !important; grid-auto-flow: dense; gap: 0 8pt; }
+  .au-extra-wide   { grid-column: 1 / span 2 !important; grid-row: 1 !important; }
+  .au-extra-narrow { grid-column: 3 / span 1 !important; grid-row: 1 !important; }
+  .au-extra-list-1col { display: block; font-size: 7pt; }
+  .au-extra-list-1col .au-extra-item { margin-bottom: 1pt; }
+  .au-extra-list-2col { column-count: 2; column-gap: 8pt; font-size: 7pt; }
+  .au-extra-list-2col .au-extra-item { break-inside: avoid; margin-bottom: 1pt; display: block; }
+  .au-extra-item { padding: 0; }
+}
+
+/* ---------- Event-Link (↗ pro Termin → offizieller Raumkalender) ----------
+   Immer unten rechts, ohne Rahmen / Hintergrund, schwarz. */
+.ev-link {
+  position: absolute;
+  top: auto;
+  bottom: 1px;
+  right: 2px;
+  left: auto;
+  font-size: 10px;
+  line-height: 1;
+  padding: 0 1px;
+  color: #000;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  text-decoration: none;
+  font-weight: 700;
+  z-index: 5;
+  opacity: 0.55;
+  pointer-events: auto;
+  white-space: nowrap;
+}
+.ev-link:hover { opacity: 1; background: transparent; color: #000; }
+/* Im Druck/PDF und in Exporten ausblenden */
+@media print { .ev-link { display: none !important; } }
+
+/* Termin-Schriften: textColorFor() wählt schwarz für helle und weiss für dunkle
+   Backgrounds — kein globales !important mehr, damit Lesbarkeit auf dunklen
+   Farben (BG/MI dunkel, Nassraum) gewahrt bleibt. */
+
+/* ---------- Custom Tooltip ---------- */
+.tooltip {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  background: rgba(20, 20, 20, 0.94);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.35;
+  max-width: 320px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  white-space: normal;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 800px) {
+  .topbar { padding: 8px 14px; flex-wrap: wrap; }
+  .toolbar { padding: 8px 14px; }
+  .view { padding: 12px 14px 24px; }
+  .week-grid { font-size: 10px; }
+  .topbar-meta { font-size: 10px; gap: 8px; }
 }
