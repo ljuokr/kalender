@@ -1,0 +1,50 @@
+name: Daten aktualisieren
+
+# Lässt täglich um 05:30 UTC laufen (07:30 CEST / 06:30 CET).
+# Zusätzlich manuell auslösbar über den Actions-Tab → "Run workflow".
+on:
+  schedule:
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+
+# Workflow darf in den Default-Branch zurückschreiben
+permissions:
+  contents: write
+
+# Falls noch ein älterer Lauf aktiv ist: abbrechen
+concurrency:
+  group: refresh-data
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Repo auschecken
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Snapshot von PHBern API holen
+        run: node build-data.js
+
+      - name: Single-File HTML neu bundlen
+        run: node build-bundle.js
+
+      - name: Commit & Push (falls sich etwas geändert hat)
+        run: |
+          if [ -z "$(git status --porcelain data.js Raumkalender.html)" ]; then
+            echo "Keine Änderungen — Commit wird übersprungen."
+            exit 0
+          fi
+          STAND=$(grep -oE 'RAUMDATEN_STAND = "[^"]+"' data.js | head -1 | sed 's/.*"\([^"]*\)"/\1/')
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.js Raumkalender.html
+          git commit -m "Daten-Refresh: Stand $STAND (auto)"
+          git push
