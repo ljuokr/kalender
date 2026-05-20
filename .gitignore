@@ -1,0 +1,11 @@
+# OS / Editor
+.DS_Store
+.claude/
+
+# Original PHBern-Aushang Word-Vorlagen (Referenz-Dateien, nicht ins Repo)
+260422_*.docx
+260423_*.docx
+
+# Build-Artefakte / Temp
+*.swp
+*.swo
