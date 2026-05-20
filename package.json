@@ -1,0 +1,15 @@
+{
+  "name": "kalender",
+  "version": "1.0.0",
+  "description": "PHBern Raumkalender — leichtgewichtiger Aushang-/Übersichts-Helfer",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "fetch": "node build-data.js",
+    "bundle": "node build-bundle.js",
+    "all": "node build-data.js && node build-bundle.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

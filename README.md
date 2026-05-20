@@ -28,15 +28,32 @@ open index.html
 
 ## Daten aktualisieren
 
-Wenn der Snapshot veraltet ist, neu generieren:
+### Vollautomatisch (empfohlen)
+
+Eine GitHub-Action (`.github/workflows/refresh-data.yml`) läuft täglich um **05:30 UTC** (07:30 CEST / 06:30 CET) und:
+
+1. ruft `node build-data.js` auf — frischer Snapshot von der PHBern-API,
+2. ruft `node build-bundle.js` auf — neue `Raumkalender.html` (Single-File),
+3. committet beide Dateien automatisch in `main`, falls sie sich geändert haben.
+
+GitHub Pages baut danach den Live-Stand neu — nach ca. 30–60 Sek ist [https://ljuokr.github.io/kalender/](https://ljuokr.github.io/kalender/) auf dem aktuellsten Stand.
+
+Manuell auslösbar im Repo unter **Actions → "Daten aktualisieren" → "Run workflow"**.
+
+### Manuell (lokal)
 
 ```bash
-node build-data.js
+npm run all     # = build-data.js + build-bundle.js
+git add data.js Raumkalender.html
+git commit -m "Daten $(date +%d.%m.%Y)"
+git push
 ```
 
-Lädt für alle Räume × HS25/FS26/HS26 die aktuellen Buchungen von PHBern und schreibt `data.js` neu (~420 KB, ~390 API-Calls, dauert ca. 1 Min).
-
 Stand und Disclaimer werden automatisch im Header der App angezeigt.
+
+## Single-File-Version
+
+Für E-Mail-Verteilung: `Raumkalender.html` enthält alles inline (HTML/CSS/JS/Daten/Libs, ~1.8 MB). Doppelklick im Postfach reicht — kein Server nötig.
 
 ## Live-Modus (optional)
 
