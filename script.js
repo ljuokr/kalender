@@ -71,7 +71,7 @@
   const DEFAULT_SELECTED = ['D023', 'D027'];
   // Max. Räume pro Tab — wird beim Tab-Wechsel angewendet
   // Aushang-Tabs nutzen feste Räume aus AUSHANG_CONFIGS, daher gleichgültig
-  const TAB_MAX_ROOMS = { week: 6, semester: 6, halfyear: 1, 'aushang-tcg': 6, 'aushang-txg': 6 };
+  const TAB_MAX_ROOMS = { week: 6, semester: 6, halfyear: 1, 'aushang-tcg': 6, 'aushang-txg': 6, 'aushang-bg': 6 };
   const MAX_SELECTED = 6; // globales Maximum
 
   // Aushang-Konfigurationen (feste Räume in Original-Reihenfolge wie Word-Vorlagen)
@@ -87,6 +87,12 @@
       rooms: ['D004', 'D008'], // Original-Reihenfolge: D004, D008
       ipsLeads: 'Verena Huber (VHu), Nora Fluri (NFl), Dominique Liniger (DLi), Elisabeth Jahnke (EJa), Maya Wechsler (MWe), Julia Lucas (JLu)',
       is1Leads: 'Karin Brülisauer (KBr), Karin Hodel (KHo)',
+    },
+    BG: {
+      title: 'Raumbelegung Bildnerisches Gestalten',
+      rooms: ['A023', 'A025', 'A027'], // BG trocken (A023, A025) + Nassraum (A027)
+      ipsLeads: '(Dozierenden-Liste ergänzen)',
+      is1Leads: '(Dozierenden-Liste ergänzen)',
     },
   };
 
@@ -403,7 +409,7 @@
     if (state.tab === 'week') renderWeek();
     else if (state.tab === 'semester') renderSemester();
     else if (state.tab === 'halfyear') renderHalfyear();
-    else if (state.tab === 'aushang-tcg' || state.tab === 'aushang-txg') renderAushang();
+    else if (state.tab === 'aushang-tcg' || state.tab === 'aushang-txg' || state.tab === 'aushang-bg') renderAushang();
   }
 
   function updateRoomHint() {
@@ -436,7 +442,8 @@
     // Aushang-Tabs setzen den Aushang-Modus automatisch
     if (tab === 'aushang-tcg') state.au.kind = 'TcG';
     if (tab === 'aushang-txg') state.au.kind = 'TxG';
-    const isAushang = tab === 'aushang-tcg' || tab === 'aushang-txg';
+    if (tab === 'aushang-bg')  state.au.kind = 'BG';
+    const isAushang = tab === 'aushang-tcg' || tab === 'aushang-txg' || tab === 'aushang-bg';
     document.querySelectorAll('.tab').forEach(t => {
       const active = t.dataset.tab === tab;
       t.classList.toggle('active', active);
@@ -1365,7 +1372,7 @@
   }
 
   async function renderAushang() {
-    if (state.tab !== 'aushang-tcg' && state.tab !== 'aushang-txg') return;
+    if (state.tab !== 'aushang-tcg' && state.tab !== 'aushang-txg' && state.tab !== 'aushang-bg') return;
     const viewEl = document.getElementById('view-aushang');
     if (!viewEl) return;
     const cfg = AUSHANG_CONFIGS[state.au.kind];
@@ -1586,23 +1593,35 @@
         (persAbbr ? `, ${escapeHtml(persAbbr)}` : '') +
         `, ${escapeHtml(cleanTitle)} ${link}`;
     };
-    // Dynamische Layout-Entscheidung: Raum mit mehr Einträgen bekommt 2 Spalten (breit links),
-    // der andere die 1 Spalte (schmal rechts). Bei Gleichstand → erster Raum breit.
+    // Layout-Entscheidung:
+    //   N=2: dynamisch wide/narrow (Raum mit mehr Items wird breit, 2 Spalten)
+    //   N>=3: alle gleichbreit (je 1 Spalte, eqcol)
     const perRoomAggregated = rooms.map(r => ({
       room: r,
       items: aggregateExtras(list.filter(e => e.room.code === r.code).sort((a, b) => a.start - b.start)),
     }));
+    const useEqualCols = rooms.length >= 3;
+    extrasGrid.classList.toggle('eqcols', useEqualCols);
+    extrasGrid.style.setProperty('--eq-cols', rooms.length);
     const wideIdx = perRoomAggregated.length > 1 && perRoomAggregated[1].items.length > perRoomAggregated[0].items.length ? 1 : 0;
     perRoomAggregated.forEach(({ room: r, items: aggregated }, rIdx) => {
       if (!aggregated.length) return;
-      const isWide = rIdx === wideIdx;
       const sec = document.createElement('section');
-      sec.className = `au-extra au-extra-${isWide ? 'wide' : 'narrow'}`;
+      if (useEqualCols) {
+        sec.className = 'au-extra au-extra-eq';
+      } else {
+        const isWide = rIdx === wideIdx;
+        sec.className = `au-extra au-extra-${isWide ? 'wide' : 'narrow'}`;
+      }
       sec.innerHTML = `<h3>Zusätzliche Belegungen im ${r.code}</h3>`;
       const colsContainer = document.createElement('div');
-      // Breiter Block (2 Spalten) — Items in 2-Spalten-Grid
-      // Schmaler Block (1 Spalte) — Items stapeln untereinander
-      colsContainer.className = isWide ? 'au-extra-list-2col' : 'au-extra-list-1col';
+      // In eq-cols-Modus immer 1col pro Raum; sonst 2col für wide / 1col für narrow
+      if (useEqualCols) {
+        colsContainer.className = 'au-extra-list-1col';
+      } else {
+        const isWide = rIdx === wideIdx;
+        colsContainer.className = isWide ? 'au-extra-list-2col' : 'au-extra-list-1col';
+      }
       for (const item of aggregated) {
         const cell = document.createElement('div');
         cell.className = 'au-extra-item';
@@ -1704,12 +1723,13 @@
     const { rooms, grid, list, mondays, kind, semester, cfg, minH, maxH } = state.lastAushang;
     const wdNames = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag'];
     const N = rooms.length;
-    const totalCols = 1 + 5 * N; // 11
+    const totalCols = 1 + 5 * N; // 11 bei N=2, 16 bei N=3
 
     // A4 quer = 16838 × 11906 dxa (1 dxa = 1/1440 inch).
     // Mit 1 cm Margins (567 dxa) bleibt 16838 - 2*567 = 15704 dxa nutzbar.
-    // 11 Spalten gleich → 1427 dxa pro Spalte → TABLE_W = 15697 dxa (fast volle Seite)
-    const COL_W = 1427;
+    // COL_W dynamisch: nutzbarer Bereich / totalCols
+    const TABLE_W_TARGET = 15700;
+    const COL_W = Math.floor(TABLE_W_TARGET / totalCols);
     const TABLE_W = COL_W * totalCols;
 
     const colorMap = { ips: 'FFC000', is1: '00B0F0', offen: 'FFFF00', neutral: 'D9D9D9' };
@@ -1921,27 +1941,35 @@
       return `${dateStr}, ${startTime}–${endTime}` + (persAbbr ? `, ${persAbbr}` : '') + `, ${cleanTitle}`;
     };
     const extraSections = [];
-    if (rooms.length >= 2) {
-      // Layout: Raum mit mehr Items bekommt 2/3 Breite (Items in 2 Sub-Spalten),
-      // der andere 1/3 Breite (Items gestapelt). Bei Gleichstand: 1. Raum breit.
+    const buildItemPara = (text) => new D.Paragraph({
+      spacing: { before: 0, after: 0, line: 200, lineRule: D.LineRuleType.AUTO },
+      children: [new D.TextRun({ text, size: 14 })],
+    });
+    const buildHeaderPara = (code) => new D.Paragraph({
+      spacing: { before: 0, after: 60 },
+      children: [new D.TextRun({ text: `Zusätzliche Belegungen im ${code}`, bold: true, size: 16, color: 'AC0101' })],
+    });
+    const extrasBorder = {
+      top: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      bottom: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      left: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      right: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      insideHorizontal: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+      insideVertical: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+    };
+
+    if (rooms.length === 2) {
+      // 2-Raum-Layout: Raum mit mehr Items bekommt 2/3 (Items in 2 Sub-Spalten),
+      // der andere 1/3 (Items gestapelt). Bei Gleichstand: 1. Raum breit.
       const narrowW = Math.floor(TABLE_W / 3);
       const wideW = TABLE_W - narrowW;
       const itemsA = aggregateExtras(list.filter(e => e.room.code === rooms[0].code).sort((a,b)=>a.start-b.start));
       const itemsB = aggregateExtras(list.filter(e => e.room.code === rooms[1].code).sort((a,b)=>a.start-b.start));
       const wideIsB = itemsB.length > itemsA.length;
-      const room0 = wideIsB ? rooms[1] : rooms[0]; // Raum für die breite (linke) Zelle
-      const room1 = wideIsB ? rooms[0] : rooms[1]; // Raum für die schmale (rechte) Zelle
+      const room0 = wideIsB ? rooms[1] : rooms[0];
+      const room1 = wideIsB ? rooms[0] : rooms[1];
       const items0 = wideIsB ? itemsB : itemsA;
       const items1 = wideIsB ? itemsA : itemsB;
-
-      const buildItemPara = (text) => new D.Paragraph({
-        spacing: { before: 0, after: 0, line: 200, lineRule: D.LineRuleType.AUTO },
-        children: [new D.TextRun({ text, size: 14 })],
-      });
-      const buildHeaderPara = (code) => new D.Paragraph({
-        spacing: { before: 0, after: 60 },
-        children: [new D.TextRun({ text: `Zusätzliche Belegungen im ${code}`, bold: true, size: 16, color: 'AC0101' })],
-      });
 
       // Linke Spalte (2/3): Raum 0, Items in 2-Spalten-Sub-Tabelle
       const wideInnerW = Math.floor(wideW / 2);
@@ -1972,14 +2000,7 @@
         width: { size: wideW, type: D.WidthType.DXA },
         layout: D.TableLayoutType.FIXED,
         columnWidths: [wideInnerW, wideW - wideInnerW],
-        borders: {
-          top: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          bottom: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          left: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          right: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          insideHorizontal: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          insideVertical: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        },
+        borders: extrasBorder,
         rows: wideInnerRows,
       }) : null;
       const wideCellChildren = [buildHeaderPara(room0.code)];
@@ -1991,8 +2012,6 @@
         verticalAlign: D.VerticalAlign.TOP,
         children: wideCellChildren,
       });
-
-      // Rechte Spalte (1/3): Raum 1, Items als gestapelte Paragraphen
       const narrowCellChildren = [buildHeaderPara(room1.code)];
       for (const it of items1) narrowCellChildren.push(buildItemPara(fmtExtra(it)));
       const narrowCell = new D.TableCell({
@@ -2002,23 +2021,40 @@
         verticalAlign: D.VerticalAlign.TOP,
         children: narrowCellChildren.length ? narrowCellChildren : [new D.Paragraph('')],
       });
-
       const extrasWrapTable = new D.Table({
         width: { size: TABLE_W, type: D.WidthType.DXA },
         layout: D.TableLayoutType.FIXED,
         columnWidths: [wideW, narrowW],
-        borders: {
-          top: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          bottom: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          left: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          right: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          insideHorizontal: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-          insideVertical: { style: D.BorderStyle.NONE, size: 0, color: 'FFFFFF' },
-        },
+        borders: extrasBorder,
         rows: [new D.TableRow({ children: [wideCell, narrowCell] })],
       });
-      // nur einfügen, wenn überhaupt Extras vorhanden
       if (items0.length || items1.length) extraSections.push(extrasWrapTable);
+
+    } else if (rooms.length >= 3) {
+      // N-Raum-Layout (N>=3): N gleichbreite Spalten, Items pro Raum gestapelt
+      const colW = Math.floor(TABLE_W / rooms.length);
+      const lastColW = TABLE_W - colW * (rooms.length - 1);
+      const cells = rooms.map((r, idx) => {
+        const itemsR = aggregateExtras(list.filter(e => e.room.code === r.code).sort((a,b)=>a.start-b.start));
+        const cellChildren = [buildHeaderPara(r.code)];
+        for (const it of itemsR) cellChildren.push(buildItemPara(fmtExtra(it)));
+        return new D.TableCell({
+          width: { size: idx === rooms.length - 1 ? lastColW : colW, type: D.WidthType.DXA },
+          margins: { top: 60, bottom: 60, left: 0, right: 100 },
+          borders: noBorder,
+          verticalAlign: D.VerticalAlign.TOP,
+          children: cellChildren.length > 1 ? cellChildren : [buildHeaderPara(r.code), new D.Paragraph('')],
+        });
+      });
+      const hasAny = rooms.some(r => list.some(e => e.room.code === r.code));
+      const extrasWrapTable = new D.Table({
+        width: { size: TABLE_W, type: D.WidthType.DXA },
+        layout: D.TableLayoutType.FIXED,
+        columnWidths: rooms.map((_, idx) => idx === rooms.length - 1 ? lastColW : colW),
+        borders: extrasBorder,
+        rows: [new D.TableRow({ children: cells })],
+      });
+      if (hasAny) extraSections.push(extrasWrapTable);
     }
 
     // ===== Document zusammensetzen =====
@@ -2275,21 +2311,18 @@
       const cleanTitle = item.title === 'LNW' ? 'LNW' : stripGroupCX(item.title);
       return `${dateStr}, ${startTime}–${endTime}` + (persAbbr ? `, ${persAbbr}` : '') + `, ${cleanTitle}`;
     };
-    if (rooms.length >= 2) {
-      // Layout: Raum mit mehr Items belegt cols 0..midEnd (2/3, 2 Sub-Spalten),
-      // der andere cols midEnd+1..totalCols-1 (1/3, 1 Spalte). Bei Gleichstand: 1. Raum breit.
-      const wideHalf = Math.floor(2 * totalCols / 6);            // wideW/2 in Excel-Cols
-      const midEnd = wideHalf * 2 - 1;                            // letzte Spalte des breiten Bereichs
-      // wideHalf z.B. 3 → wide nimmt cols 0..5 (Sub1: 0..2, Sub2: 3..5), narrow: 6..10
+    if (rooms.length === 2) {
+      // 2-Raum-Layout: Raum mit mehr Items belegt 2/3 (2 Sub-Spalten), der andere 1/3
+      const wideHalf = Math.floor(2 * totalCols / 6);
+      const midEnd = wideHalf * 2 - 1;
       const itemsA = aggregateExtras(list.filter(e => e.room.code === rooms[0].code).sort((a,b)=>a.start-b.start));
       const itemsB = aggregateExtras(list.filter(e => e.room.code === rooms[1].code).sort((a,b)=>a.start-b.start));
       const wideIsB = itemsB.length > itemsA.length;
-      const r0 = wideIsB ? rooms[1] : rooms[0]; // breit (links)
-      const r1 = wideIsB ? rooms[0] : rooms[1]; // schmal (rechts)
+      const r0 = wideIsB ? rooms[1] : rooms[0];
+      const r1 = wideIsB ? rooms[0] : rooms[1];
       const items0 = wideIsB ? itemsB : itemsA;
       const items1 = wideIsB ? itemsA : itemsB;
 
-      // Header-Zeile: Raum0-Header (links breit, gemerged 0..midEnd) + Raum1-Header (rechts schmal, midEnd+1..totalCols-1)
       const hdrIdx = aoa.length;
       const hdrRow = Array(totalCols).fill(null);
       hdrRow[0] = `Zusätzliche Belegungen im ${r0.code}`;
@@ -2300,30 +2333,62 @@
       styledCells.push({ r: hdrIdx, c: 0, style: { font: { bold: true, sz: 11, color: { rgb: 'AC0101' } } } });
       styledCells.push({ r: hdrIdx, c: midEnd + 1, style: { font: { bold: true, sz: 11, color: { rgb: 'AC0101' } } } });
 
-      // Items: Raum0 in 2 Sub-Spalten (cols 0..wideHalf-1 und wideHalf..midEnd), Raum1 in 1 Spalte (cols midEnd+1..totalCols-1)
       const rowsCount = Math.max(Math.ceil(items0.length / 2), items1.length);
       for (let i = 0; i < rowsCount; i++) {
         const row = Array(totalCols).fill(null);
         const exIdx = aoa.length;
-        // Links Sub-Spalte 1: items0[2i]
         const leftIdx = 2 * i;
         if (leftIdx < items0.length) {
           row[0] = fmtExtraTxt(items0[leftIdx]);
           merges.push({ s: { r: exIdx, c: 0 }, e: { r: exIdx, c: wideHalf - 1 } });
           styledCells.push({ r: exIdx, c: 0, style: { font: { sz: 9 }, alignment: { wrapText: true, vertical: 'top' } } });
         }
-        // Mitte Sub-Spalte 2: items0[2i+1]
         const midIdx = 2 * i + 1;
         if (midIdx < items0.length) {
           row[wideHalf] = fmtExtraTxt(items0[midIdx]);
           merges.push({ s: { r: exIdx, c: wideHalf }, e: { r: exIdx, c: midEnd } });
           styledCells.push({ r: exIdx, c: wideHalf, style: { font: { sz: 9 }, alignment: { wrapText: true, vertical: 'top' } } });
         }
-        // Rechts schmal: items1[i]
         if (i < items1.length) {
           row[midEnd + 1] = fmtExtraTxt(items1[i]);
           merges.push({ s: { r: exIdx, c: midEnd + 1 }, e: { r: exIdx, c: totalCols - 1 } });
           styledCells.push({ r: exIdx, c: midEnd + 1, style: { font: { sz: 9 }, alignment: { wrapText: true, vertical: 'top' } } });
+        }
+        aoa.push(row);
+      }
+
+    } else if (rooms.length >= 3) {
+      // N-Raum-Layout (N>=3): gleichbreite Spalten, Items pro Raum gestapelt
+      const N3 = rooms.length;
+      const colExcel = Math.floor(totalCols / N3); // Excel-Cols pro Raum-Section
+      const itemsPerRoom = rooms.map(r => aggregateExtras(list.filter(e => e.room.code === r.code).sort((a,b)=>a.start-b.start)));
+      // Header-Zeile
+      const hdrIdx = aoa.length;
+      const hdrRow = Array(totalCols).fill(null);
+      const colStart = [];
+      const colEnd = [];
+      for (let k = 0; k < N3; k++) {
+        const start = k * colExcel;
+        const end = (k === N3 - 1) ? totalCols - 1 : (k + 1) * colExcel - 1;
+        colStart.push(start);
+        colEnd.push(end);
+        hdrRow[start] = `Zusätzliche Belegungen im ${rooms[k].code}`;
+      }
+      aoa.push(hdrRow);
+      for (let k = 0; k < N3; k++) {
+        merges.push({ s: { r: hdrIdx, c: colStart[k] }, e: { r: hdrIdx, c: colEnd[k] } });
+        styledCells.push({ r: hdrIdx, c: colStart[k], style: { font: { bold: true, sz: 11, color: { rgb: 'AC0101' } } } });
+      }
+      const rowsCount = Math.max(...itemsPerRoom.map(arr => arr.length));
+      for (let i = 0; i < rowsCount; i++) {
+        const row = Array(totalCols).fill(null);
+        const exIdx = aoa.length;
+        for (let k = 0; k < N3; k++) {
+          if (i < itemsPerRoom[k].length) {
+            row[colStart[k]] = fmtExtraTxt(itemsPerRoom[k][i]);
+            merges.push({ s: { r: exIdx, c: colStart[k] }, e: { r: exIdx, c: colEnd[k] } });
+            styledCells.push({ r: exIdx, c: colStart[k], style: { font: { sz: 9 }, alignment: { wrapText: true, vertical: 'top' } } });
+          }
         }
         aoa.push(row);
       }
@@ -2338,8 +2403,10 @@
     // Sheet bauen
     const ws = XLSX.utils.aoa_to_sheet(aoa);
     // Spaltenbreiten: Zeit 7 chars, andere 16 chars (Excel-Einheit)
+    // Bei N=2: 16 Zeichen pro Raum-Spalte; bei N>=3 schmaler damit alles auf A4 quer passt
+    const roomColWch = N >= 3 ? 11 : 16;
     ws['!cols'] = [{ wch: 8 }];
-    for (let i = 1; i < totalCols; i++) ws['!cols'].push({ wch: 16 });
+    for (let i = 1; i < totalCols; i++) ws['!cols'].push({ wch: roomColWch });
     // Zeilenhöhen: Body-Stunden 30pt
     ws['!rows'] = [];
     ws['!rows'][0] = { hpt: 22 };  // Titel
