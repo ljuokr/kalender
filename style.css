@@ -886,6 +886,11 @@ button:hover { background: var(--phbern-red-dark); }
 }
 .au-extra-wide   { grid-column: 1 / span 2; grid-row: 1; }
 .au-extra-narrow { grid-column: 3 / span 1; grid-row: 1; }
+/* N>=3 Räume: gleichbreite Spalten (alle eq-Sections nebeneinander, Zeile 1) */
+.au-extras-grid.eqcols {
+  grid-template-columns: repeat(var(--eq-cols, 3), 1fr);
+}
+.au-extras-grid.eqcols .au-extra-eq { grid-row: 1; grid-column: auto / span 1; }
 /* Inhalt: 1 Spalte beim schmalen Raum, 2 Spalten beim breiten */
 .au-extra-list-1col {
   display: block;
