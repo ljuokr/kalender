@@ -92,7 +92,7 @@
       title: 'Raumbelegung Bildnerisches Gestalten',
       rooms: ['A023', 'A025', 'A027'], // BG trocken (A023, A025) + Nassraum (A027)
       // Aus dem Snapshot ermittelt: regelmässige Dozierende der BG-Räume HS25/FS26/HS26
-      ipsLeads: 'Myriam Loepfe (MLo), Franziska Keusen (FKe), Natalia Funariu (NFu), Ursula Aebersold (UAe), Alexandra Kunz (AKu)',
+      ipsLeads: 'Myriam Loepfe (MLo), Franziska Keusen (FKe), Natalia Funariu (NFu), Ursula Aebersold (UAe), Alexandra Kunz (AKu), Selin Bourquin (SBo)',
       is1Leads: 'Anja Sutter-Bratschi (ASu), Caroline Conk (CCo), Romy Troxler (RTr), Jonas Etter (JEt), Sonja Schär (SSc), Sofie Lena Hänni (SHä)',
     },
   };
@@ -126,6 +126,7 @@
     'Alexandra Kunz': 'AKu',
     'Anja Sutter-Bratschi': 'ASu',
     'Sofie Lena Hänni': 'SHä',
+    'Selin Bourquin': 'SBo',
   };
   function abbrPerson(full) {
     if (PERSON_ABBR[full]) return PERSON_ABBR[full];
@@ -750,10 +751,16 @@
           block.style.color = textColorFor(room.color);
           block.style.top = top + 'px';
           block.style.height = (height - 1) + 'px';
+          // Dataset für Modal-Lookup
+          block.dataset.eventRoomId = room.id;
+          block.dataset.eventTitle = ev.title;
+          block.dataset.eventStartH = ev.start.getHours();
+          block.dataset.eventWd = ev.start.getDay();
+          block.dataset.eventType = aushangType(ev.title);
           const evWeekStart = startOfWeek(ev.start);
           const evLink = `<a class="ev-link" href="${ROOM_URL(room.id, evWeekStart)}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen (${room.code}, KW ${weekNumber(evWeekStart)})" onclick="event.stopPropagation()">↗</a>`;
           block.innerHTML = `${evLink}<strong>${timeStr(ev.start)}–${timeStr(ev.end)}</strong>${escapeHtml(shortTitle(ev.title))}${ev.persons ? `<br><em>${escapeHtml(ev.persons)}</em>` : ''}`;
-          attachTooltip(block, `${room.code} · ${timeStr(ev.start)}–${timeStr(ev.end)}\n${ev.title}${ev.persons ? '\n' + ev.persons : ''}`);
+          attachTooltip(block, `${room.code} · ${timeStr(ev.start)}–${timeStr(ev.end)}\n${ev.title}${ev.persons ? '\n' + ev.persons : ''}\n\n(Klick für alle Termine)`);
           dayCol.children[rIdx].appendChild(block);
         }
       });
@@ -828,6 +835,114 @@
   function hideTooltip() {
     tooltipEl.style.display = 'none';
   }
+
+  // ---------- Termin-Detail-Modal (alle wiederkehrenden Instanzen) ----------
+  const modalEl = document.getElementById('event-modal');
+  const modalHeadEl = modalEl ? modalEl.querySelector('.event-modal-head') : null;
+  const modalTitleEl = modalEl ? modalEl.querySelector('#event-modal-title') : null;
+  const modalBodyEl = modalEl ? modalEl.querySelector('.event-modal-body') : null;
+  if (modalEl) {
+    modalEl.querySelectorAll('[data-modal-close]').forEach(el => {
+      el.addEventListener('click', () => modalEl.classList.add('hidden'));
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalEl.classList.contains('hidden')) {
+        modalEl.classList.add('hidden');
+      }
+    });
+  }
+
+  // Findet alle Instanzen eines Termins im Snapshot.
+  // Filter: gleicher Raum + Titel + Start-Stunde + (optional) Wochentag.
+  // Vergleich nur auf Stunden, da normalizeEvent() auf ganze Stunden rundet.
+  function findEventInstances(roomId, title, startH, weekday /* getDay()-Wert oder undefined */) {
+    const data = window.RAUMDATEN && window.RAUMDATEN[roomId];
+    if (!data) return [];
+    const out = [];
+    for (const events of Object.values(data)) {
+      for (const ev of events) {
+        if (!ev.t || ev.t !== title) continue;
+        const rawStart = new Date((ev.s || 0) * 1000);
+        if (rawStart.getHours() !== startH) continue;
+        if (typeof weekday === 'number' && rawStart.getDay() !== weekday) continue;
+        out.push({
+          start: rawStart,
+          end: new Date((ev.e || 0) * 1000),
+          persons: ev.p || '',
+        });
+      }
+    }
+    return out.sort((a, b) => a.start - b.start);
+  }
+
+  function openEventModal(opts) {
+    if (!modalEl) return;
+    const room = ROOMS.find(r => r.id === opts.roomId);
+    if (!room) return;
+    const wd = (typeof opts.weekday === 'number') ? opts.weekday : undefined;
+    const instances = findEventInstances(opts.roomId, opts.title, opts.startH || 0, wd);
+    const headBg = AUSHANG_COLORS[opts.aushangType] || '#f5f5f5';
+    const headFg = textColorFor(headBg);
+    modalHeadEl.style.setProperty('--modal-head-bg', headBg);
+    modalHeadEl.style.setProperty('--modal-head-fg', headFg);
+    modalTitleEl.textContent = stripGroupCX(opts.title) || opts.title || '(ohne Titel)';
+    modalTitleEl.style.color = headFg;
+
+    // Zeit-Range aus erster Instanz oder opts
+    const sample = instances[0];
+    const startStr = sample ? timeStr(sample.start) : `${String(opts.startH || 0).padStart(2,'0')}:${String(opts.startM || 0).padStart(2,'0')}`;
+    const endStr = sample ? timeStr(sample.end) : '';
+    const timeRange = endStr ? `${startStr}–${endStr}` : startStr;
+
+    // Häufigste Personen-Kombi für die Anzeige in der Meta
+    const personFreq = new Map();
+    instances.forEach(i => personFreq.set(i.persons, (personFreq.get(i.persons) || 0) + 1));
+    const topPersons = [...personFreq.entries()].sort((a,b) => b[1]-a[1])[0]?.[0] || '';
+
+    const wdShort = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+    const listHtml = instances.map(inst => {
+      const wd = wdShort[inst.start.getDay()];
+      const dateStr = swissDate(inst.start);
+      const kw = weekNumber(inst.start);
+      const monday = startOfWeek(inst.start);
+      const personsDiffers = inst.persons && inst.persons !== topPersons;
+      const persDisplay = personsDiffers ? abbrPersons(inst.persons) : '';
+      const href = ROOM_URL(opts.roomId, monday);
+      return `<li>
+        <span class="emi-wd">${wd}</span>
+        <span class="emi-date">${escapeHtml(dateStr)}</span>
+        <span class="emi-kw">KW ${kw}</span>
+        <span class="emi-pers">${escapeHtml(persDisplay)}</span>
+        <a class="emi-link" href="${href}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen">↗</a>
+      </li>`;
+    }).join('');
+
+    modalBodyEl.innerHTML = `
+      <dl class="event-modal-meta">
+        <dt>Raum</dt><dd>${escapeHtml(room.code)} — ${escapeHtml(room.label.replace(`${room.code} — `, ''))}</dd>
+        <dt>Zeit</dt><dd>${escapeHtml(timeRange)}</dd>
+        ${topPersons ? `<dt>Dozierende</dt><dd>${escapeHtml(topPersons)}</dd>` : ''}
+        <dt>Termine</dt><dd>${instances.length}</dd>
+      </dl>
+      <p class="event-modal-list-title">Alle Termine</p>
+      <ul class="event-modal-list">${listHtml || '<li>Keine Termine gefunden.</li>'}</ul>
+    `;
+    modalEl.classList.remove('hidden');
+  }
+
+  // Globale Click-Delegation: jeder Termin-Block mit data-event-title öffnet das Modal
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a[href], .ev-link')) return; // Pfeil-Link macht sein eigenes Ding
+    const block = e.target.closest('[data-event-title]');
+    if (!block) return;
+    openEventModal({
+      roomId: +block.dataset.eventRoomId,
+      title: block.dataset.eventTitle,
+      startH: +block.dataset.eventStartH || 0,
+      weekday: block.dataset.eventWd !== undefined ? +block.dataset.eventWd : undefined,
+      aushangType: block.dataset.eventType || 'neutral',
+    });
+  });
 
   // ", Gruppe C" und ", Gruppe X" werden in der Anzeige weggelassen
   // (interne PHBern-Gruppen, im Aushang nicht relevant)
@@ -1011,7 +1126,8 @@
             const c = r.color;
             const evWeek = startOfWeek(e.start);
             const link = `<a class="ev-link" href="${ROOM_URL(r.id, evWeek)}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen (${r.code})" onclick="event.stopPropagation()">↗</a>`;
-            return `<div class="cell-ev" style="border-left-color:${c}"><strong>${t}</strong><br>${escapeHtml(shortTitle(e.title))}${e.persons ? `<br><em>${escapeHtml(e.persons)}</em>` : ''}${link}</div>`;
+            const dt = `data-event-room-id="${r.id}" data-event-title="${escapeHtml(e.title)}" data-event-start-h="${e.start.getHours()}" data-event-wd="${e.start.getDay()}" data-event-type="${aushangType(e.title)}"`;
+            return `<div class="cell-ev" style="border-left-color:${c}" ${dt} title="Klick für alle Termine"><strong>${t}</strong><br>${escapeHtml(shortTitle(e.title))}${e.persons ? `<br><em>${escapeHtml(e.persons)}</em>` : ''}${link}</div>`;
           }).join('');
         }
         tr.appendChild(td);
@@ -1284,6 +1400,11 @@
               big.style.height = (height - 1) + 'px';
               big.style.left = left + '%';
               big.style.width = `calc(${width}% - 1px)`;
+              big.dataset.eventRoomId = room.id;
+              big.dataset.eventTitle = sample.title;
+              big.dataset.eventStartH = sample.start.getHours();
+              big.dataset.eventWd = sample.start.getDay();
+              big.dataset.eventType = aushangType(sample.title);
               const timeLabel = `${timeStr(sample.start)}–${timeStr(sample.end)}`;
               const titleFull = sample.title;
               const titleShort = shortTitle(titleFull);
@@ -1316,6 +1437,11 @@
                 mini.style.height = (height - 1) + 'px';
                 mini.style.left = `${(wIdx / W) * 100}%`;
                 mini.style.width = `calc(${100 / W}% - 1px)`;
+                mini.dataset.eventRoomId = room.id;
+                mini.dataset.eventTitle = ev.title;
+                mini.dataset.eventStartH = ev.start.getHours();
+                mini.dataset.eventWd = ev.start.getDay();
+                mini.dataset.eventType = aushangType(ev.title);
                 const monday = mondays[wIdx];
                 const miniLink = `<a class="ev-link" href="${ROOM_URL(room.id, monday)}" target="_blank" rel="noopener" title="KW ${weekNumber(monday)} im offiziellen Raumkalender öffnen (${room.code})" onclick="event.stopPropagation()">↗</a>`;
                 mini.innerHTML = `${miniLink}<span>${escapeHtml(shortTitle(ev.title))}</span>`;
@@ -1490,8 +1616,10 @@
           room: sample.room,
           dayIdx: sample.dayIdx,
           startH: sample.start.getHours(),
+          startM: sample.start.getMinutes(),
           endH: sample.end.getHours() || 24,
-          title: sample.title,
+          title: sample.title, // ggf. 'LNW'
+          origTitle: sample._origTitle || sample.title, // für Modal-Lookup im Snapshot
           persons: sample.persons,
           aushangType: sample.aushangType,
           weekIdxs: items.map(i => i.weekIdx),
@@ -1597,7 +1725,15 @@
               ${persAbbr ? `<div class="au-ev-pers">${escapeHtml(persAbbr)}</div>` : ''}
               ${kwLabel ? `<div class="au-ev-kw">${escapeHtml(kwLabel)}</div>` : ''}
             </div>`;
-            td.title = `${startsHere.title}\n${startsHere.persons || ''}\n${kwLabel || 'durchgehend'}`;
+            td.title = `${startsHere.title}\n${startsHere.persons || ''}\n${kwLabel || 'durchgehend'}\n\n(Klick für alle Termine)`;
+            // Dataset für Modal-Lookup
+            td.classList.add('has-event');
+            td.dataset.eventRoomId = r.id;
+            td.dataset.eventTitle = startsHere.origTitle || startsHere.title;
+            td.dataset.eventStartH = startsHere.startH;
+            // dayIdx 0=Mo … 4=Fr → getDay() 1=Mo … 5=Fr
+            td.dataset.eventWd = (dIdx + 1) % 7;
+            td.dataset.eventType = typ;
             for (let k = h + 1; k < h + span; k++) occupied.add(`${dIdx}|${r.code}|${k}`);
           }
           tr.appendChild(td);
