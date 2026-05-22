@@ -1,5 +1,5 @@
 <!--
-  Raumkalender (Single-File) — gebaut am 22.05.2026 08:39
+  Raumkalender (Single-File) — gebaut am 22.05.2026 11:00
   Per Mail verschicken, lokal mit Browser öffnen — kein Server nötig.
   Quelle der Daten: https://apps.phbern.ch/raumkalender/
 -->
@@ -22742,8 +22742,9 @@ window.RAUMDATEN = {"8270837":{"28.07.2025":[],"04.08.2025":[],"11.08.2025":[],"
     BG: {
       title: 'Raumbelegung Bildnerisches Gestalten',
       rooms: ['A023', 'A025', 'A027'], // BG trocken (A023, A025) + Nassraum (A027)
-      ipsLeads: '(Dozierenden-Liste ergänzen)',
-      is1Leads: '(Dozierenden-Liste ergänzen)',
+      // Aus dem Snapshot ermittelt: regelmässige Dozierende der BG-Räume HS25/FS26/HS26
+      ipsLeads: 'Myriam Loepfe (MLo), Franziska Keusen (FKe), Natalia Funariu (NFu), Ursula Aebersold (UAe), Alexandra Kunz (AKu)',
+      is1Leads: 'Anja Sutter-Bratschi (ASu), Caroline Conk (CCo), Romy Troxler (RTr), Jonas Etter (JEt), Sonja Schär (SSc), Sofie Lena Hänni (SHä)',
     },
   };
 
@@ -22768,6 +22769,14 @@ window.RAUMDATEN = {"8270837":{"28.07.2025":[],"04.08.2025":[],"11.08.2025":[],"
     'Matthias Bigler': 'MBi',
     'Johanna Wehrlin': 'JWe',
     'Kathleen Pandey': 'KPa',
+    // BG-Faculty (aus Snapshot-Analyse)
+    'Myriam Loepfe': 'MLo',
+    'Franziska Keusen': 'FKe',
+    'Natalia Funariu': 'NFu',
+    'Ursula Aebersold': 'UAe',
+    'Alexandra Kunz': 'AKu',
+    'Anja Sutter-Bratschi': 'ASu',
+    'Sofie Lena Hänni': 'SHä',
   };
   function abbrPerson(full) {
     if (PERSON_ABBR[full]) return PERSON_ABBR[full];
@@ -22803,6 +22812,34 @@ window.RAUMDATEN = {"8270837":{"28.07.2025":[],"04.08.2025":[],"11.08.2025":[],"
     if (/^kulturelle praktiken/i.test(t)) return 'ips';
     if (/^medien und informatik\s*[12]/i.test(t)) return 'ips';
     if (/^[äa]sthetische forschung/i.test(t)) return 'ips'; // JLu/AKu IPS-Modul
+
+    // BG-Hauptmodule (IPS, orange): Bildnerisches Gestalten 1/2 + Wahlpflichtfach +
+    // Material-fokussierte Module
+    if (/^bildnerisches gestalten\s*[12]/i.test(t)) return 'ips';
+    if (/^wahlpflichtfach bildnerisches/i.test(t)) return 'ips';
+    if (/^fachkompetenz bildnerisches/i.test(t)) return 'ips'; // LNW des Hauptmoduls
+    if (/^muster gestalten|^3-d-druck|^ton in form/i.test(t)) return 'ips';
+
+    // BG-Spezial-/Didaktikmodule (IS1, cyan): wie bei TTG
+    if (/^malerei und zeichnung/i.test(t)) return 'is1';
+    if (/^fotografie und visuelle/i.test(t)) return 'is1';
+    if (/^animation\b/i.test(t)) return 'is1';
+    if (/^k[oö]rper und raum/i.test(t)) return 'is1';
+    if (/^bild projekt produkt/i.test(t)) return 'is1';
+    if (/^bildnerisches gestalten\s*-\s*eine kreativ/i.test(t)) return 'is1';
+    if (/^vielf[aä]ltige zug[aä]nge/i.test(t)) return 'is1';
+    if (/^experimentelles gestalten/i.test(t)) return 'is1';
+    if (/^mikroplanung bildnerisches|^makroplanung bildnerisches/i.test(t)) return 'is1';
+    if (/^beurteilen im bildnerischen/i.test(t)) return 'is1';
+    if (/^klassenf[uü]hrung und kompensatorische/i.test(t)) return 'is1';
+    if (/^zusammenarbeit und aslo/i.test(t)) return 'is1';
+    if (/^planung von doppellekt|^planung von adapt/i.test(t)) return 'is1';
+    if (/^fachverst[aä]ndnis und lp21 bildnerisches/i.test(t)) return 'is1';
+    if (/^f[oö]rderorientierte strategien/i.test(t)) return 'is1';
+    // WfU (Weiterentwicklung des fachspezifischen Unterrichtens) — alle Fächer
+    if (/^weiterentwicklung des fachspezifischen/i.test(t)) return 'is1';
+    // Offenes Atelier — analog "Offene Werkstatt", als offene/freie Slots gelb
+    if (/^offenes atelier/i.test(t)) return 'offen';
 
     // IS1 (cyan): explizite IS1-Module — auch bei Leistungsnachweis-Zusatz
     if (/^tcg\s/i.test(t)) return 'is1';
