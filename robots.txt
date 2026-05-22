@@ -1,0 +1,4 @@
+# Suchmaschinen sollen diesen Lese-Helfer NICHT indexieren.
+# Die Daten kommen von https://apps.phbern.ch/raumkalender/ — bitte dort einsteigen.
+User-agent: *
+Disallow: /
