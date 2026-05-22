@@ -1006,6 +1006,129 @@ button:hover { background: var(--phbern-red-dark); }
    Backgrounds — kein globales !important mehr, damit Lesbarkeit auf dunklen
    Farben (BG/MI dunkel, Nassraum) gewahrt bleibt. */
 
+/* ---------- Termin-Detail-Modal (alle wiederkehrenden Instanzen) ---------- */
+.event-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.event-modal.hidden { display: none; }
+.event-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+.event-modal-card {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  max-width: 640px;
+  width: 100%;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.event-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--modal-head-bg, #f5f5f5);
+  color: var(--modal-head-fg, #000);
+}
+.event-modal-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: inherit;
+}
+.event-modal-close {
+  background: transparent;
+  color: inherit;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  padding: 0 4px;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.event-modal-close:hover { opacity: 0.7; }
+.event-modal-body {
+  padding: 12px 16px 16px;
+  overflow-y: auto;
+  flex: 1;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #000;
+}
+.event-modal-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin-bottom: 14px;
+  font-size: 12.5px;
+}
+.event-modal-meta dt {
+  font-weight: 700;
+  color: #444;
+}
+.event-modal-meta dd { margin: 0; }
+.event-modal-list-title {
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555;
+  margin: 0 0 6px;
+}
+.event-modal-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.event-modal-list li {
+  display: grid;
+  grid-template-columns: max-content max-content max-content 1fr max-content;
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 4px 6px;
+  border-radius: 3px;
+}
+.event-modal-list li:nth-child(odd) { background: #fafafa; }
+.event-modal-list .emi-wd { font-weight: 700; color: #000; min-width: 24px; }
+.event-modal-list .emi-date { font-variant-numeric: tabular-nums; color: #000; }
+.event-modal-list .emi-kw { color: #555; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.event-modal-list .emi-pers { color: #555; font-size: 11.5px; }
+.event-modal-list .emi-link {
+  text-decoration: none;
+  color: var(--phbern-red);
+  font-weight: 700;
+  padding: 0 4px;
+}
+.event-modal-list .emi-link:hover { text-decoration: underline; }
+
+/* Klickbare Termine: kleiner Cursor-Hinweis */
+.wg-event, .au-td-cell.has-event, .cell-ev, .ov-mini, .ov-full {
+  cursor: pointer;
+}
+.wg-event:hover, .au-td-cell.has-event:hover, .cell-ev:hover, .ov-mini:hover, .ov-full:hover {
+  filter: brightness(1.05);
+}
+
 /* ---------- Custom Tooltip ---------- */
 .tooltip {
   position: fixed;

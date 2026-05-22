@@ -7,7 +7,7 @@
   <meta http-equiv="pragma" content="no-cache">
   <meta http-equiv="expires" content="0">
   <title>Raumkalender</title>
-  <link rel="stylesheet" href="style.css?v=20260522bgcolors">
+  <link rel="stylesheet" href="style.css?v=20260522modal">
 </head>
 <body>
   <main class="page">
@@ -99,9 +99,21 @@
     <section id="view-aushang" class="view hidden"></section>
   </main>
 
+  <!-- Termin-Detail-Modal: zeigt alle wiederkehrenden Instanzen -->
+  <div id="event-modal" class="event-modal hidden" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+    <div class="event-modal-backdrop" data-modal-close></div>
+    <div class="event-modal-card">
+      <header class="event-modal-head">
+        <h2 id="event-modal-title">Termin</h2>
+        <button type="button" class="event-modal-close" data-modal-close aria-label="Schliessen">×</button>
+      </header>
+      <div class="event-modal-body"></div>
+    </div>
+  </div>
+
   <script src="xlsx.bundle.js"></script>
   <script src="docx.umd.js"></script>
-  <script src="data.js?v=20260522bgcolors"></script>
-  <script src="script.js?v=20260522bgcolors"></script>
+  <script src="data.js?v=20260522modal"></script>
+  <script src="script.js?v=20260522modal"></script>
 </body>
 </html>
