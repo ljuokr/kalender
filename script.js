@@ -189,7 +189,7 @@
     // WfU (Weiterentwicklung des fachspezifischen Unterrichtens) — alle Fächer
     if (/^weiterentwicklung des fachspezifischen/i.test(t)) return 'is1';
     // Offenes Atelier — analog "Offene Werkstatt", als offene/freie Slots gelb
-    if (/^offenes atelier/i.test(t)) return 'offen';
+    if (/^offenes atelier/i.test(t)) return 'is1'; // BG-Format, klassifiziert als IS1-Spezialmodul (cyan)
 
     // IS1 (cyan): explizite IS1-Module — auch bei Leistungsnachweis-Zusatz
     if (/^tcg\s/i.test(t)) return 'is1';
@@ -214,14 +214,10 @@
     // Sonst neutral
     return 'neutral';
   }
-  // Kontext-Wrapper: in BG- und Nassraum-Räumen ist die gelbe "offene Werkstatt"-
-  // Farbe nicht passend (TTG-spezifisch); statt 'offen' liefert die Funktion 'neutral'.
-  function aushangTypeForRoom(title, room) {
-    const t = aushangType(title);
-    if (t === 'offen' && room && (room.group === 'BG' || room.group === 'Nassraum')) {
-      return 'neutral';
-    }
-    return t;
+  // Kontext-Wrapper: aktuell reine Weiterleitung an aushangType().
+  // (Behalten als zentraler Hook für künftige raum-spezifische Sonderfälle.)
+  function aushangTypeForRoom(title, /* room */) {
+    return aushangType(title);
   }
   const AUSHANG_COLORS = {
     ips:     '#FFC000',
