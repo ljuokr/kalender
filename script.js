@@ -875,6 +875,9 @@
     return out.sort((a, b) => a.start - b.start);
   }
 
+  // Modal-State für Exporte
+  let currentModalCtx = null;
+
   function openEventModal(opts) {
     if (!modalEl) return;
     const room = ROOMS.find(r => r.id === opts.roomId);
@@ -888,51 +891,204 @@
     modalTitleEl.textContent = stripGroupCX(opts.title) || opts.title || '(ohne Titel)';
     modalTitleEl.style.color = headFg;
 
-    // Zeit-Range aus erster Instanz oder opts
     const sample = instances[0];
-    const startStr = sample ? timeStr(sample.start) : `${String(opts.startH || 0).padStart(2,'0')}:${String(opts.startM || 0).padStart(2,'0')}`;
+    const startStr = sample ? timeStr(sample.start) : `${String(opts.startH || 0).padStart(2,'0')}:00`;
     const endStr = sample ? timeStr(sample.end) : '';
     const timeRange = endStr ? `${startStr}–${endStr}` : startStr;
 
-    // Häufigste Personen-Kombi für die Anzeige in der Meta
     const personFreq = new Map();
     instances.forEach(i => personFreq.set(i.persons, (personFreq.get(i.persons) || 0) + 1));
     const topPersons = [...personFreq.entries()].sort((a,b) => b[1]-a[1])[0]?.[0] || '';
 
     const wdShort = ['So','Mo','Di','Mi','Do','Fr','Sa'];
-    const listHtml = instances.map(inst => {
-      const wd = wdShort[inst.start.getDay()];
-      const dateStr = swissDate(inst.start);
-      const kw = weekNumber(inst.start);
-      const monday = startOfWeek(inst.start);
-      const personsDiffers = inst.persons && inst.persons !== topPersons;
-      const persDisplay = personsDiffers ? abbrPersons(inst.persons) : '';
-      const href = ROOM_URL(opts.roomId, monday);
-      return `<li>
-        <span class="emi-wd">${wd}</span>
-        <span class="emi-date">${escapeHtml(dateStr)}</span>
-        <span class="emi-kw">KW ${kw}</span>
-        <span class="emi-pers">${escapeHtml(persDisplay)}</span>
-        <a class="emi-link" href="${href}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen">↗</a>
-      </li>`;
-    }).join('');
+
+    // ----- Lücken-Logik: alle Wochen vom ersten bis letzten Termin am gleichen Wochentag -----
+    const allRows = []; // [{kind:'event', inst} | {kind:'free', date}]
+    if (instances.length > 0) {
+      const startDay = new Date(instances[0].start);
+      startDay.setHours(0, 0, 0, 0);
+      const endDay = new Date(instances[instances.length - 1].start);
+      endDay.setHours(0, 0, 0, 0);
+      // Map per ISO-Date für schnellen Lookup
+      const byDate = new Map();
+      for (const i of instances) {
+        const k = new Date(i.start); k.setHours(0, 0, 0, 0);
+        byDate.set(k.getTime(), i);
+      }
+      for (let d = new Date(startDay); d <= endDay; d.setDate(d.getDate() + 7)) {
+        const inst = byDate.get(d.getTime());
+        allRows.push(inst ? { kind: 'event', inst } : { kind: 'free', date: new Date(d) });
+      }
+    }
+    const freeCount = allRows.filter(r => r.kind === 'free').length;
+
+    // Render mit Collapse aufeinanderfolgender Frei-Wochen
+    const renderedRows = [];
+    let freeRun = [];
+    const flushFreeRun = () => {
+      if (!freeRun.length) return;
+      const first = freeRun[0];
+      const last = freeRun[freeRun.length - 1];
+      const fromKw = weekNumber(first);
+      const toKw = weekNumber(last);
+      const range = freeRun.length === 1
+        ? `KW ${fromKw}`
+        : `KW ${fromKw}–${toKw} (${freeRun.length} Wochen)`;
+      renderedRows.push(`<li class="emi-free">— ${range}: keine Termine —</li>`);
+      freeRun = [];
+    };
+    for (const row of allRows) {
+      if (row.kind === 'event') {
+        flushFreeRun();
+        const inst = row.inst;
+        const wdName = wdShort[inst.start.getDay()];
+        const dateStr = swissDate(inst.start);
+        const kw = weekNumber(inst.start);
+        const monday = startOfWeek(inst.start);
+        const personsDiffers = inst.persons && inst.persons !== topPersons;
+        const persDisplay = personsDiffers ? abbrPersons(inst.persons) : '';
+        const href = ROOM_URL(opts.roomId, monday);
+        renderedRows.push(`<li>
+          <span class="emi-wd">${wdName}</span>
+          <span class="emi-date">${escapeHtml(dateStr)}</span>
+          <span class="emi-kw">KW ${kw}</span>
+          <span class="emi-pers">${escapeHtml(persDisplay)}</span>
+          <a class="emi-link" href="${href}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen">↗</a>
+        </li>`);
+      } else {
+        freeRun.push(row.date);
+      }
+    }
+    flushFreeRun();
+
+    const titleClean = stripGroupCX(opts.title) || opts.title;
 
     modalBodyEl.innerHTML = `
       <dl class="event-modal-meta">
         <dt>Raum</dt><dd>${escapeHtml(room.code)} — ${escapeHtml(room.label.replace(`${room.code} — `, ''))}</dd>
         <dt>Zeit</dt><dd>${escapeHtml(timeRange)}</dd>
         ${topPersons ? `<dt>Dozierende</dt><dd>${escapeHtml(topPersons)}</dd>` : ''}
-        <dt>Termine</dt><dd>${instances.length}</dd>
+        <dt>Termine</dt><dd>${instances.length}${freeCount > 0 ? ` <span class="emi-summary-free">· ${freeCount} freie Woche${freeCount === 1 ? '' : 'n'} dazwischen</span>` : ''}</dd>
       </dl>
-      <p class="event-modal-list-title">Alle Termine</p>
-      <ul class="event-modal-list">${listHtml || '<li>Keine Termine gefunden.</li>'}</ul>
+      <p class="event-modal-list-title">Alle Termine (vom ersten bis zum letzten)</p>
+      <ul class="event-modal-list">${renderedRows.join('') || '<li>Keine Termine gefunden.</li>'}</ul>
+      <div class="event-modal-export">
+        <span class="emi-export-label">Export:</span>
+        <button type="button" class="emi-export-btn" data-export="ics" title="iCalendar — für Outlook, Apple Kalender, Google Kalender, …">📅 iCal (.ics)</button>
+        <button type="button" class="emi-export-btn" data-export="csv" title="CSV — für Excel, Numbers, Google Sheets">📊 CSV</button>
+        <button type="button" class="emi-export-btn" data-export="print" title="Drucken oder als PDF speichern (Browser-Dialog)">🖨 Drucken / PDF</button>
+      </div>
     `;
+    currentModalCtx = { opts, room, instances, titleClean, timeRange, topPersons };
     modalEl.classList.remove('hidden');
   }
 
+  // ---------- Export aus dem Modal ----------
+  function downloadBlob(filename, mimeType, content) {
+    const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+  }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function toICSDate(d) {
+    // Lokale Zeit als YYYYMMDDTHHMMSS — Outlook/Apple interpretieren als lokal (kein UTC)
+    return d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + 'T' +
+           pad2(d.getHours()) + pad2(d.getMinutes()) + pad2(d.getSeconds());
+  }
+  function escapeICS(s) {
+    return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+  function buildICS(ctx) {
+    const { opts, room, instances, titleClean } = ctx;
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//PHBern Raumkalender Helper//DE',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+    ];
+    const nowStamp = toICSDate(new Date());
+    for (const inst of instances) {
+      const uid = `${room.id}-${(inst.start.getTime() / 1000) | 0}@kalender.ljuokr.github.io`;
+      const url = ROOM_URL(room.id, startOfWeek(inst.start));
+      lines.push(
+        'BEGIN:VEVENT',
+        'UID:' + uid,
+        'DTSTAMP:' + nowStamp,
+        'DTSTART:' + toICSDate(inst.start),
+        'DTEND:' + toICSDate(inst.end),
+        'SUMMARY:' + escapeICS(titleClean),
+        'LOCATION:' + escapeICS(room.code + ' — ' + room.label.replace(`${room.code} — `, '')),
+        'DESCRIPTION:' + escapeICS(`Raum: ${room.code}\nDozierende: ${inst.persons || '–'}\n\nQuelle: PHBern Raumkalender`),
+        'URL:' + url,
+        'END:VEVENT',
+      );
+    }
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n') + '\r\n';
+  }
+  function csvEscape(s) {
+    const str = String(s || '');
+    if (/[",\r\n;]/.test(str)) return '"' + str.replace(/"/g, '""') + '"';
+    return str;
+  }
+  function buildCSV(ctx) {
+    const { opts, room, instances, titleClean } = ctx;
+    const wdShort = ['So','Mo','Di','Mi','Do','Fr','Sa'];
+    const rows = [['Datum', 'Wochentag', 'Zeit', 'KW', 'Modul', 'Raum', 'Dozierende']];
+    for (const inst of instances) {
+      rows.push([
+        swissDate(inst.start),
+        wdShort[inst.start.getDay()],
+        `${timeStr(inst.start)}-${timeStr(inst.end)}`,
+        weekNumber(inst.start),
+        titleClean,
+        room.code,
+        inst.persons || '',
+      ]);
+    }
+    // BOM für Excel, damit Umlaute korrekt erkannt werden
+    return '﻿' + rows.map(r => r.map(csvEscape).join(';')).join('\r\n');
+  }
+  function safeFilename(s) {
+    return String(s || 'termine').replace(/[\/\\?%*:|"<>]/g, '').replace(/\s+/g, '_').slice(0, 80);
+  }
+  function exportICS() {
+    if (!currentModalCtx) return;
+    const fn = `${safeFilename(currentModalCtx.titleClean)}_${currentModalCtx.room.code}.ics`;
+    downloadBlob(fn, 'text/calendar', buildICS(currentModalCtx));
+  }
+  function exportCSV() {
+    if (!currentModalCtx) return;
+    const fn = `${safeFilename(currentModalCtx.titleClean)}_${currentModalCtx.room.code}.csv`;
+    downloadBlob(fn, 'text/csv', buildCSV(currentModalCtx));
+  }
+  function exportPrint() {
+    document.body.classList.add('printing-modal');
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => document.body.classList.remove('printing-modal'), 200);
+    }, 50);
+  }
+
+  // Export-Buttons im Modal
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.emi-export-btn');
+    if (!btn) return;
+    e.preventDefault();
+    if (btn.dataset.export === 'ics') exportICS();
+    else if (btn.dataset.export === 'csv') exportCSV();
+    else if (btn.dataset.export === 'print') exportPrint();
+  });
+
   // Globale Click-Delegation: jeder Termin-Block mit data-event-title öffnet das Modal
   document.addEventListener('click', (e) => {
-    if (e.target.closest('a[href], .ev-link')) return; // Pfeil-Link macht sein eigenes Ding
+    if (e.target.closest('a[href], .ev-link, .emi-export-btn')) return; // Link / Export-Button macht sein eigenes Ding
     const block = e.target.closest('[data-event-title]');
     if (!block) return;
     openEventModal({
