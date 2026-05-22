@@ -1,5 +1,5 @@
 <!--
-  Raumkalender (Single-File) — gebaut am 22.05.2026 15:06
+  Raumkalender (Single-File) — gebaut am 22.05.2026 15:09
   Per Mail verschicken, lokal mit Browser öffnen — kein Server nötig.
   Quelle der Daten: https://apps.phbern.ch/raumkalender/
 -->
@@ -23078,10 +23078,16 @@ window.RAUMDATEN = {"8270837":{"28.07.2025":[],"04.08.2025":[],"11.08.2025":[],"
     // Sonst neutral
     return 'neutral';
   }
-  // Kontext-Wrapper: aktuell reine Weiterleitung an aushangType().
-  // (Behalten als zentraler Hook für künftige raum-spezifische Sonderfälle.)
-  function aushangTypeForRoom(title, /* room */) {
-    return aushangType(title);
+  // Kontext-Wrapper: "Offene Werkstatt" gibt es als Aushang-Konzept nur in TTG.
+  // Daten-Einträge mit diesem Titel in BG-/Nassraum-Räumen sind keine echten
+  // OW-Slots → auf 'neutral' herabstufen (grau statt gelb).
+  // "Offenes Atelier" wird bereits in aushangType() als 'is1' klassifiziert.
+  function aushangTypeForRoom(title, room) {
+    const t = aushangType(title);
+    if (t === 'offen' && room && (room.group === 'BG' || room.group === 'Nassraum')) {
+      return 'neutral';
+    }
+    return t;
   }
   const AUSHANG_COLORS = {
     ips:     '#FFC000',
