@@ -214,6 +214,15 @@
     // Sonst neutral
     return 'neutral';
   }
+  // Kontext-Wrapper: in BG- und Nassraum-Räumen ist die gelbe "offene Werkstatt"-
+  // Farbe nicht passend (TTG-spezifisch); statt 'offen' liefert die Funktion 'neutral'.
+  function aushangTypeForRoom(title, room) {
+    const t = aushangType(title);
+    if (t === 'offen' && room && (room.group === 'BG' || room.group === 'Nassraum')) {
+      return 'neutral';
+    }
+    return t;
+  }
   const AUSHANG_COLORS = {
     ips:     '#FFC000',
     is1:     '#00B0F0',
@@ -747,8 +756,13 @@
 
           const block = document.createElement('div');
           block.className = 'wg-event';
-          block.style.background = room.color;
-          block.style.color = textColorFor(room.color);
+          // Aushang-Farbschema in der Wochenansicht: IPS-Orange / IS1-Cyan / neutral
+          const evType = aushangTypeForRoom(ev.title, room);
+          const evBg = AUSHANG_COLORS[evType] || room.color;
+          block.style.background = evBg;
+          block.style.color = textColorFor(evBg);
+          // Linke Akzent-Border in Raumfarbe zur Identifikation des Raums
+          block.style.borderLeft = `3px solid ${room.color}`;
           block.style.top = top + 'px';
           block.style.height = (height - 1) + 'px';
           // Dataset für Modal-Lookup
@@ -756,7 +770,7 @@
           block.dataset.eventTitle = ev.title;
           block.dataset.eventStartH = ev.start.getHours();
           block.dataset.eventWd = ev.start.getDay();
-          block.dataset.eventType = aushangType(ev.title);
+          block.dataset.eventType = evType;
           const evWeekStart = startOfWeek(ev.start);
           const evLink = `<a class="ev-link" href="${ROOM_URL(room.id, evWeekStart)}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen (${room.code}, KW ${weekNumber(evWeekStart)})" onclick="event.stopPropagation()">↗</a>`;
           block.innerHTML = `${evLink}<strong>${timeStr(ev.start)}–${timeStr(ev.end)}</strong>${escapeHtml(shortTitle(ev.title))}${ev.persons ? `<br><em>${escapeHtml(ev.persons)}</em>` : ''}`;
@@ -1282,8 +1296,11 @@
             const c = r.color;
             const evWeek = startOfWeek(e.start);
             const link = `<a class="ev-link" href="${ROOM_URL(r.id, evWeek)}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen (${r.code})" onclick="event.stopPropagation()">↗</a>`;
-            const dt = `data-event-room-id="${r.id}" data-event-title="${escapeHtml(e.title)}" data-event-start-h="${e.start.getHours()}" data-event-wd="${e.start.getDay()}" data-event-type="${aushangType(e.title)}"`;
-            return `<div class="cell-ev" style="border-left-color:${c}" ${dt} title="Klick für alle Termine"><strong>${t}</strong><br>${escapeHtml(shortTitle(e.title))}${e.persons ? `<br><em>${escapeHtml(e.persons)}</em>` : ''}${link}</div>`;
+            const cType = aushangTypeForRoom(e.title, r);
+            const cBg = AUSHANG_COLORS[cType] || '#f5f5f5';
+            const cFg = textColorFor(cBg);
+            const dt = `data-event-room-id="${r.id}" data-event-title="${escapeHtml(e.title)}" data-event-start-h="${e.start.getHours()}" data-event-wd="${e.start.getDay()}" data-event-type="${cType}"`;
+            return `<div class="cell-ev" style="border-left-color:${c}; background:${cBg}; color:${cFg}" ${dt} title="Klick für alle Termine"><strong>${t}</strong><br>${escapeHtml(shortTitle(e.title))}${e.persons ? `<br><em>${escapeHtml(e.persons)}</em>` : ''}${link}</div>`;
           }).join('');
         }
         tr.appendChild(td);
@@ -1550,8 +1567,11 @@
               const width = ((endIdx - startIdx) / W) * 100;
               const big = document.createElement('div');
               big.className = 'ov-mini ov-full';
-              big.style.background = room.color;
-              big.style.color = textColorFor(room.color);
+              const bigType = aushangTypeForRoom(sample.title, room);
+              const bigBg = AUSHANG_COLORS[bigType] || room.color;
+              big.style.background = bigBg;
+              big.style.color = textColorFor(bigBg);
+              big.style.borderLeft = `3px solid ${room.color}`;
               big.style.top = top + 'px';
               big.style.height = (height - 1) + 'px';
               big.style.left = left + '%';
@@ -1560,7 +1580,7 @@
               big.dataset.eventTitle = sample.title;
               big.dataset.eventStartH = sample.start.getHours();
               big.dataset.eventWd = sample.start.getDay();
-              big.dataset.eventType = aushangType(sample.title);
+              big.dataset.eventType = bigType;
               const timeLabel = `${timeStr(sample.start)}–${timeStr(sample.end)}`;
               const titleFull = sample.title;
               const titleShort = shortTitle(titleFull);
@@ -1587,8 +1607,10 @@
                 const ev = evs.find(e => e.weekIdx === wIdx);
                 const mini = document.createElement('div');
                 mini.className = 'ov-mini ov-mini-vertical';
-                mini.style.background = room.color;
-                mini.style.color = textColorFor(room.color);
+                const miniType = aushangTypeForRoom(ev.title, room);
+                const miniBg = AUSHANG_COLORS[miniType] || room.color;
+                mini.style.background = miniBg;
+                mini.style.color = textColorFor(miniBg);
                 mini.style.top = top + 'px';
                 mini.style.height = (height - 1) + 'px';
                 mini.style.left = `${(wIdx / W) * 100}%`;
@@ -1597,7 +1619,7 @@
                 mini.dataset.eventTitle = ev.title;
                 mini.dataset.eventStartH = ev.start.getHours();
                 mini.dataset.eventWd = ev.start.getDay();
-                mini.dataset.eventType = aushangType(ev.title);
+                mini.dataset.eventType = miniType;
                 const monday = mondays[wIdx];
                 const miniLink = `<a class="ev-link" href="${ROOM_URL(room.id, monday)}" target="_blank" rel="noopener" title="KW ${weekNumber(monday)} im offiziellen Raumkalender öffnen (${room.code})" onclick="event.stopPropagation()">↗</a>`;
                 mini.innerHTML = `${miniLink}<span>${escapeHtml(shortTitle(ev.title))}</span>`;
@@ -1723,7 +1745,7 @@
             if (dayIdx >= 5) continue; // nur Mo–Fr
             if (e.start < rangeStart || e.start > rangeEnd) continue; // ausserhalb Semester
             const ev = { ...e, room: r, dayIdx, weekIdx: wi };
-            ev.aushangType = aushangType(ev.title); // VOR LNW-Normalisierung klassifizieren
+            ev.aushangType = aushangTypeForRoom(ev.title, ev.room); // BG-Räume: kein 'offen'
             if (isLNW(ev.title)) {
               ev._origTitle = ev.title;
               ev.title = 'LNW';
