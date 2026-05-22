@@ -214,10 +214,16 @@
     // Sonst neutral
     return 'neutral';
   }
-  // Kontext-Wrapper: aktuell reine Weiterleitung an aushangType().
-  // (Behalten als zentraler Hook für künftige raum-spezifische Sonderfälle.)
-  function aushangTypeForRoom(title, /* room */) {
-    return aushangType(title);
+  // Kontext-Wrapper: "Offene Werkstatt" gibt es als Aushang-Konzept nur in TTG.
+  // Daten-Einträge mit diesem Titel in BG-/Nassraum-Räumen sind keine echten
+  // OW-Slots → auf 'neutral' herabstufen (grau statt gelb).
+  // "Offenes Atelier" wird bereits in aushangType() als 'is1' klassifiziert.
+  function aushangTypeForRoom(title, room) {
+    const t = aushangType(title);
+    if (t === 'offen' && room && (room.group === 'BG' || room.group === 'Nassraum')) {
+      return 'neutral';
+    }
+    return t;
   }
   const AUSHANG_COLORS = {
     ips:     '#FFC000',
