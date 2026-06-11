@@ -44,7 +44,7 @@ Manuell auslösbar im Repo unter **Actions → "Daten aktualisieren" → "Run wo
 
 ```bash
 npm run all     # = build-data.js + build-bundle.js
-git add data.js Raumkalender.html
+git add data.js
 git commit -m "Daten $(date +%d.%m.%Y)"
 git push
 ```
@@ -53,7 +53,14 @@ Stand und Disclaimer werden automatisch im Header der App angezeigt.
 
 ## Single-File-Version
 
-Für E-Mail-Verteilung: `Raumkalender.html` enthält alles inline (HTML/CSS/JS/Daten/Libs, ~1.8 MB). Doppelklick im Postfach reicht — kein Server nötig.
+Für E-Mail-Verteilung gibt es eine Einzeldatei, die alles inline enthält (HTML/CSS/JS/Daten/Libs, ~1.8 MB) — Doppelklick im Postfach reicht, kein Server nötig.
+
+Diese Datei wird **nicht** ins Git committet (sonst wächst die Repo-History täglich um 1.8 MB), sondern täglich automatisch als **Release-Asset** veröffentlicht:
+
+- Immer aktuell: <https://github.com/ljuokr/kalender/releases/download/raumkalender/Raumkalender.html>
+- Fallback: datierte Versionen (`Raumkalender-YYYY-MM-DD.html`) der letzten 14 Tage im selben Release, ältere werden automatisch gelöscht.
+
+Lokal jederzeit selbst baubar mit `npm run all` (erzeugt `Raumkalender.html` im Arbeitsverzeichnis).
 
 ## Live-Modus (optional)
 

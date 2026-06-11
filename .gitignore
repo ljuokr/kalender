@@ -9,3 +9,7 @@
 # Build-Artefakte / Temp
 *.swp
 *.swo
+
+# Single-File-Bundle: nicht mehr ins Git, kommt als Release-Asset (aktuell + 14-Tage-Fallback)
+Raumkalender.html
+Raumkalender-*.html
