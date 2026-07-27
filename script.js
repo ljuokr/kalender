@@ -534,6 +534,9 @@
     if (!ev.start || !ev.end) return null;
     // FDZ:-Doppelungen ausfiltern
     if (ev.title.startsWith('FDZ:')) return null;
+    // Geschützte Leerzeichen aus dem Buchungssystem zu normalen machen —
+    // sonst greifen Titel-Regeln nicht (z.B. "Muster gestalten" mit NBSP blieb grau)
+    const title = ev.title.replace(/[\u00a0\u202f]/g, ' ');
     // Auf volle Stunden runden (start floor, end ceil)
     const start = new Date(ev.start);
     start.setMinutes(0, 0, 0);
@@ -542,7 +545,7 @@
       end.setMinutes(0, 0, 0);
       end.setHours(end.getHours() + 1);
     }
-    return { ...ev, start, end };
+    return { ...ev, title, start, end };
   }
 
   function fromSnapshot(roomId, mondaySwiss) {
