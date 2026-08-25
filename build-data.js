@@ -14,6 +14,7 @@ const ROOMS = [
   { code: 'A027', id: 8270839 },
   { code: 'C003', id: 8270847 },
   { code: 'C005', id: 8270849 },
+  { code: 'D031', id: 8270868 },
 ];
 
 // FS-Range: 01.02. bis 31.07. (inkl. Blocktage am Anfang und nach dem Semester-Ende)

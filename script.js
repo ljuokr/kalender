@@ -29,6 +29,7 @@
     // Medien & Informatik — warmes Orange-Braun (von Textil-Orange klar unterscheidbar)
     { code: 'C003', id: 8270847, label: 'C003 — MakerSpace',     color: '#E08A2C', group: 'MI' },
     { code: 'C005', id: 8270849, label: 'C005 — Medien & Inf.',  color: '#A35A12', group: 'MI' },
+    { code: 'D031', id: 8270868, label: 'D031 — Medienbildung',  color: '#8B5E34', group: 'MI' },
   ];
   ROOMS.forEach(r => { r.url = ROOM_URL(r.id); });
 
@@ -71,7 +72,7 @@
   const DEFAULT_SELECTED = ['D023', 'D027'];
   // Max. Räume pro Tab — wird beim Tab-Wechsel angewendet
   // Aushang-Tabs nutzen feste Räume aus AUSHANG_CONFIGS, daher gleichgültig
-  const TAB_MAX_ROOMS = { week: 6, semester: 6, halfyear: 1, 'aushang-tcg': 6, 'aushang-txg': 6, 'aushang-bg': 6 };
+  const TAB_MAX_ROOMS = { week: 6, semester: 6, halfyear: 1, 'aushang-tcg': 6, 'aushang-txg': 6, 'aushang-bg': 6, 'aushang-d031': 6 };
   const MAX_SELECTED = 6; // globales Maximum
 
   // Aushang-Konfigurationen (feste Räume in Original-Reihenfolge wie Word-Vorlagen)
@@ -94,6 +95,13 @@
       // Aus dem Snapshot ermittelt: regelmässige Dozierende der BG-Räume HS25/FS26/HS26
       ipsLeads: 'Myriam Loepfe (MLo), Franziska Keusen (FKe), Natalia Funariu (NFu), Ursula Aebersold (UAe), Alexandra Kunz (AKu), Selin Bourquin (SBo)',
       is1Leads: 'Anja Sutter-Bratschi (ASu), Caroline Conk (CCo), Romy Troxler (RTr), Jonas Etter (JEt), Sonja Schär (SSc), Sofie Lena Hänni (SHä)',
+    },
+    D031: {
+      title: 'Raumbelegung Medienbildung',
+      rooms: ['D031'], // ein Raum, Resource-ID 8270868 (Fab8, „Medienbildung")
+      // Keine festen Dozierenden-Listen bekannt — leere Zeilen werden im Aushang ausgeblendet
+      ipsLeads: '',
+      is1Leads: '',
     },
   };
 
@@ -458,7 +466,7 @@
     if (state.tab === 'week') renderWeek();
     else if (state.tab === 'semester') renderSemester();
     else if (state.tab === 'halfyear') renderHalfyear();
-    else if (state.tab === 'aushang-tcg' || state.tab === 'aushang-txg' || state.tab === 'aushang-bg') renderAushang();
+    else if (state.tab.startsWith('aushang-')) renderAushang();
   }
 
   function updateRoomHint() {
@@ -492,7 +500,8 @@
     if (tab === 'aushang-tcg') state.au.kind = 'TcG';
     if (tab === 'aushang-txg') state.au.kind = 'TxG';
     if (tab === 'aushang-bg')  state.au.kind = 'BG';
-    const isAushang = tab === 'aushang-tcg' || tab === 'aushang-txg' || tab === 'aushang-bg';
+    if (tab === 'aushang-d031') state.au.kind = 'D031';
+    const isAushang = tab.startsWith('aushang-');
     document.querySelectorAll('.tab').forEach(t => {
       const active = t.dataset.tab === tab;
       t.classList.toggle('active', active);
@@ -1718,7 +1727,7 @@
   }
 
   async function renderAushang() {
-    if (state.tab !== 'aushang-tcg' && state.tab !== 'aushang-txg' && state.tab !== 'aushang-bg') return;
+    if (!state.tab.startsWith('aushang-')) return;
     const viewEl = document.getElementById('view-aushang');
     if (!viewEl) return;
     const cfg = AUSHANG_CONFIGS[state.au.kind];
@@ -1829,10 +1838,10 @@
           <div class="au-legend-cell" style="background:${AUSHANG_COLORS.offen}; color:${textColorFor(AUSHANG_COLORS.offen)}">offene Werkstatt</div>
         </div>
       </div>
-      <div class="au-leads">
-        <div><strong>IPS Dozierende:</strong> ${escapeHtml(cfg.ipsLeads)}</div>
-        <div><strong>IS1 Dozierende:</strong> ${escapeHtml(cfg.is1Leads)}</div>
-      </div>
+      ${cfg.ipsLeads || cfg.is1Leads ? `<div class="au-leads">
+        ${cfg.ipsLeads ? `<div><strong>IPS Dozierende:</strong> ${escapeHtml(cfg.ipsLeads)}</div>` : ''}
+        ${cfg.is1Leads ? `<div><strong>IS1 Dozierende:</strong> ${escapeHtml(cfg.is1Leads)}</div>` : ''}
+      </div>` : ''}
     `;
 
     // Eine Tabelle mit beiden Räumen nebeneinander pro Tag
