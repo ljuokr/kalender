@@ -246,10 +246,13 @@
     HS25: { start: '2025-09-15', end: '2025-12-19' },
   };
 
+  // Dev-Proxy (node proxy.js) nur ansprechen, wenn die Seite selbst lokal läuft.
+  // Von der veröffentlichten Seite aus löst ein localhost-Fetch in Chrome die
+  // Berechtigungsabfrage „Zugriff auf Apps/lokales Netzwerk" aus.
+  const IS_LOCAL_PAGE = ['localhost', '127.0.0.1'].includes(location.hostname) || location.protocol === 'file:';
   const API_ENDPOINTS = [
     '/api/events',
-    'http://localhost:3000/api/events',
-    'http://127.0.0.1:3000/api/events',
+    ...(IS_LOCAL_PAGE ? ['http://localhost:3000/api/events', 'http://127.0.0.1:3000/api/events'] : []),
     'https://apps.phbern.ch/raumkalender/api/v1/resource/events',
   ];
 
