@@ -241,6 +241,7 @@
   };
 
   const SEMESTERS = window.RAUMDATEN_SEMESTERS || {
+    FS27: { start: '2027-02-01', end: '2027-07-31' },
     HS26: { start: '2026-09-14', end: '2026-12-18' },
     FS26: { start: '2026-02-16', end: '2026-05-29' },
     HS25: { start: '2025-09-15', end: '2025-12-19' },
@@ -323,7 +324,9 @@
   }
 
 
-  // Aushang — Semester-Toggle (Buttons HS26 / FS26 statt Dropdown)
+  // Aushang — Semester-Toggle (Buttons FS26 / HS26 / FS27 statt Dropdown)
+  // FS = Frühlingssemester, HS = Herbstsemester (für Titel in Aushang, Word, Excel)
+  const semName = (k) => (k.startsWith('FS') ? 'Frühlingssemester ' : 'Herbstsemester ') + k;
   const auSemBtns = document.querySelectorAll('.sem-btn');
   const auPrintBtn = document.getElementById('au-print');
   const auDocBtn = document.getElementById('au-doc');
@@ -1834,7 +1837,7 @@
     wrap.className = 'aushang';
     wrap.innerHTML = `
       <div class="au-top-row">
-        <h1 class="au-title">${escapeHtml(cfg.title)}, Herbstsemester ${state.au.semester}</h1>
+        <h1 class="au-title">${escapeHtml(cfg.title)}, ${semName(state.au.semester)}</h1>
         <div class="au-legend">
           <div class="au-legend-cell" style="background:${AUSHANG_COLORS.ips}; color:${textColorFor(AUSHANG_COLORS.ips)}">Veranstaltungen IPS</div>
           <div class="au-legend-cell" style="background:${AUSHANG_COLORS.is1}; color:${textColorFor(AUSHANG_COLORS.is1)}">Veranstaltungen IS1</div>
@@ -2236,7 +2239,7 @@
       children: [
         new D.Paragraph({
           spacing: { before: 0, after: 0 },
-          children: [new D.TextRun({ text: `${cfg.title}, Herbstsemester ${semester}`, bold: true, size: 28, color: 'AC0101' })],
+          children: [new D.TextRun({ text: `${cfg.title}, ${semName(semester)}`, bold: true, size: 28, color: 'AC0101' })],
         }),
       ],
     });
@@ -2508,7 +2511,7 @@
     const rgb = h => h.replace('#','').toUpperCase();
 
     // Zeile 0: Titel (über alle Spalten)
-    const titleText = `${cfg.title}, Herbstsemester ${semester}`;
+    const titleText = `${cfg.title}, ${semName(semester)}`;
     aoa.push([titleText, ...Array(totalCols-1).fill(null)]);
     merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols-1 } });
     styledCells.push({ r: 0, c: 0, style: { font: { bold: true, sz: 14, color: { rgb: 'AC0101' } } } });

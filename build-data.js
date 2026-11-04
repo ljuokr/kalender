@@ -23,6 +23,7 @@ const SEMESTERS = {
   HS25: { start: '2025-08-01', end: '2026-01-31' },
   FS26: { start: '2026-02-01', end: '2026-07-31' },
   HS26: { start: '2026-08-01', end: '2027-01-31' },
+  FS27: { start: '2027-02-01', end: '2027-07-31' },
 };
 
 const API = 'https://apps.phbern.ch/raumkalender/api/v1/resource/events';
