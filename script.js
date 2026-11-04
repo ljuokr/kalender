@@ -170,7 +170,10 @@
     if (/^kulturelle praktiken/i.test(t)) return 'ips';
     if (/^medien und informatik\s*[12]/i.test(t)) return 'ips';
     if (/^[äa]sthetische forschung/i.test(t)) return 'ips'; // JLu/AKu IPS-Modul
-    if (/\boedk\b/i.test(t)) return 'ips'; // oEDK-Module (z. B. Fachwissenschaftliches Angebot oEDK, DLi) sind IPS
+    if (/\boedk\b/i.test(t)) return 'ips';
+    if (/^von der bionik zur robotik/i.test(t)) return 'ips';
+    if (/^klang und bild/i.test(t)) return 'ips';
+    if (/^meine welt mit daten/i.test(t)) return 'ips'; // oEDK-Module (z. B. Fachwissenschaftliches Angebot oEDK, DLi) sind IPS
 
     // BG-Hauptmodule (IPS, orange): Bildnerisches Gestalten 1/2 + Wahlpflichtfach +
     // Material-fokussierte Module
@@ -227,7 +230,9 @@
   // Daten-Einträge mit diesem Titel in BG-/Nassraum-Räumen sind keine echten
   // OW-Slots → auf 'neutral' herabstufen (grau statt gelb).
   // "Offenes Atelier" wird bereits in aushangType() als 'is1' klassifiziert.
-  function aushangTypeForRoom(title, room) {
+  function aushangTypeForRoom(title, room, persons) {
+    // «Besetzt» von UWi + EJa ist ein IPS-Modul (D008/D023), übrige «Besetzt» bleiben grau
+    if (/^besetzt$/i.test(title || '') && /wildeisen/i.test(persons || '') && /jahnke/i.test(persons || '')) return 'ips';
     const t = aushangType(title);
     if (t === 'offen' && room && (room.group === 'BG' || room.group === 'Nassraum')) {
       return 'neutral';
@@ -784,7 +789,7 @@
           const block = document.createElement('div');
           block.className = 'wg-event';
           // Aushang-Farbschema in der Wochenansicht: IPS-Orange / IS1-Cyan / neutral
-          const evType = aushangTypeForRoom(ev.title, room);
+          const evType = aushangTypeForRoom(ev.title, room, ev.persons);
           const evBg = AUSHANG_COLORS[evType] || room.color;
           block.style.background = evBg;
           block.style.color = textColorFor(evBg);
@@ -1324,7 +1329,7 @@
             const c = r.color;
             const evWeek = startOfWeek(e.start);
             const link = `<a class="ev-link" href="${ROOM_URL(r.id, evWeek)}" target="_blank" rel="noopener" title="Diese Woche im offiziellen Raumkalender öffnen (${r.code})" onclick="event.stopPropagation()">↗</a>`;
-            const cType = aushangTypeForRoom(e.title, r);
+            const cType = aushangTypeForRoom(e.title, r, e.persons);
             const cBg = AUSHANG_COLORS[cType] || '#f5f5f5';
             const cFg = textColorFor(cBg);
             const dt = `data-event-room-id="${r.id}" data-event-title="${escapeHtml(e.title)}" data-event-start-h="${e.start.getHours()}" data-event-wd="${e.start.getDay()}" data-event-type="${cType}"`;
@@ -1595,7 +1600,7 @@
               const width = ((endIdx - startIdx) / W) * 100;
               const big = document.createElement('div');
               big.className = 'ov-mini ov-full';
-              const bigType = aushangTypeForRoom(sample.title, room);
+              const bigType = aushangTypeForRoom(sample.title, room, sample.persons);
               const bigBg = AUSHANG_COLORS[bigType] || room.color;
               big.style.background = bigBg;
               big.style.color = textColorFor(bigBg);
@@ -1635,7 +1640,7 @@
                 const ev = evs.find(e => e.weekIdx === wIdx);
                 const mini = document.createElement('div');
                 mini.className = 'ov-mini ov-mini-vertical';
-                const miniType = aushangTypeForRoom(ev.title, room);
+                const miniType = aushangTypeForRoom(ev.title, room, ev.persons);
                 const miniBg = AUSHANG_COLORS[miniType] || room.color;
                 mini.style.background = miniBg;
                 mini.style.color = textColorFor(miniBg);
@@ -1773,7 +1778,7 @@
             if (dayIdx >= 5) continue; // nur Mo–Fr
             if (e.start < rangeStart || e.start > rangeEnd) continue; // ausserhalb Semester
             const ev = { ...e, room: r, dayIdx, weekIdx: wi };
-            ev.aushangType = aushangTypeForRoom(ev.title, ev.room); // BG-Räume: kein 'offen'
+            ev.aushangType = aushangTypeForRoom(ev.title, ev.room, ev.persons); // BG-Räume: kein 'offen'
             if (isLNW(ev.title)) {
               ev._origTitle = ev.title;
               ev.title = 'LNW';
