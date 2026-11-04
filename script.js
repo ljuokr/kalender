@@ -170,6 +170,7 @@
     if (/^kulturelle praktiken/i.test(t)) return 'ips';
     if (/^medien und informatik\s*[12]/i.test(t)) return 'ips';
     if (/^[äa]sthetische forschung/i.test(t)) return 'ips'; // JLu/AKu IPS-Modul
+    if (/\boedk\b/i.test(t)) return 'ips'; // oEDK-Module (z. B. Fachwissenschaftliches Angebot oEDK, DLi) sind IPS
 
     // BG-Hauptmodule (IPS, orange): Bildnerisches Gestalten 1/2 + Wahlpflichtfach +
     // Material-fokussierte Module
