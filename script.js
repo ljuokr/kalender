@@ -243,7 +243,6 @@
   const SEMESTERS = window.RAUMDATEN_SEMESTERS || {
     FS27: { start: '2027-02-01', end: '2027-07-31' },
     HS26: { start: '2026-09-14', end: '2026-12-18' },
-    FS26: { start: '2026-02-16', end: '2026-05-29' },
     HS25: { start: '2025-09-15', end: '2025-12-19' },
   };
 
@@ -324,7 +323,7 @@
   }
 
 
-  // Aushang — Semester-Toggle (Buttons FS26 / HS26 / FS27 statt Dropdown)
+  // Aushang — Semester-Toggle (Buttons HS26 / FS27 statt Dropdown)
   // FS = Frühlingssemester, HS = Herbstsemester (für Titel in Aushang, Word, Excel)
   const semName = (k) => (k.startsWith('FS') ? 'Frühlingssemester ' : 'Herbstsemester ') + k;
   const auSemBtns = document.querySelectorAll('.sem-btn');
