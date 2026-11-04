@@ -547,11 +547,12 @@
   // 2) Falls Snapshot fehlt: Live-API über Proxy/CORS
   function normalizeEvent(ev) {
     if (!ev.start || !ev.end) return null;
-    // FDZ:-Doppelungen ausfiltern
-    if (ev.title.startsWith('FDZ:')) return null;
+    // «FDZ:»-Präfix entfernen und merken. Doppelungen (FDZ + gleicher Termin ohne FDZ)
+    // entfernt dropFdzTwins(). Viele Termine gibt es nur als FDZ-Fassung (z. B. D027).
+    const fdz = ev.title.startsWith('FDZ:');
     // Geschützte Leerzeichen aus dem Buchungssystem zu normalen machen —
     // sonst greifen Titel-Regeln nicht (z.B. "Muster gestalten" mit NBSP blieb grau)
-    const title = ev.title.replace(/[\u00a0\u202f]/g, ' ');
+    const title = ev.title.replace(/^FDZ:\s*/, '').replace(/[\u00a0\u202f]/g, ' ');
     // Auf volle Stunden runden (start floor, end ceil)
     const start = new Date(ev.start);
     start.setMinutes(0, 0, 0);
@@ -560,19 +561,25 @@
       end.setMinutes(0, 0, 0);
       end.setHours(end.getHours() + 1);
     }
-    return { ...ev, title, start, end };
+    return { ...ev, title, start, end, fdz };
+  }
+
+  // FDZ-Termin verwerfen, wenn derselbe Termin (Titel + Beginn) auch ohne FDZ existiert
+  function dropFdzTwins(events) {
+    const plain = new Set(events.filter(e => !e.fdz).map(e => e.title + '|' + e.start.getTime()));
+    return events.filter(e => !e.fdz || !plain.has(e.title + '|' + e.start.getTime()));
   }
 
   function fromSnapshot(roomId, mondaySwiss) {
     const r = window.RAUMDATEN?.[roomId]?.[mondaySwiss];
     if (!r) return null;
-    return r.map(ev => normalizeEvent({
+    return dropFdzTwins(r.map(ev => normalizeEvent({
       id: ev.i,
       title: ev.t || 'Ohne Titel',
       start: ev.s ? new Date(ev.s * 1000) : null,
       end: ev.e ? new Date(ev.e * 1000) : null,
       persons: ev.p || '',
-    })).filter(Boolean);
+    })).filter(Boolean));
   }
 
   async function fetchEventsRaw(roomId, dateSwiss) {
@@ -594,13 +601,13 @@
         });
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const data = await res.json();
-        const events = (data.events || []).map(ev => normalizeEvent({
+        const events = dropFdzTwins((data.events || []).map(ev => normalizeEvent({
           id: ev.id,
           title: ev.title || 'Ohne Titel',
           start: ev.start ? new Date(ev.start * 1000) : null,
           end: ev.stop ? new Date(ev.stop * 1000) : null,
           persons: ev.persons || '',
-        })).filter(Boolean);
+        })).filter(Boolean));
         state.cache.set(key, events);
         return events;
       } catch (err) { lastErr = err; }
@@ -1157,6 +1164,7 @@
     t = t.replace(/Weiterentwicklung\s+des\s+fachspezifischen\s+Unterrichtens(?:\s+TTG)?/i, 'WfU');
     const map = {
       'Textiles und Technisches Gestalten 1 Kombiniertes Angebot': 'TTG 1',
+      'Textiles und Technisches Gestalten 1 Kombiniertes Angebot (inkl. BIL)': 'TTG 1 (BIL)',
       'Textiles und Technisches Gestalten 2 Zyklus 1 Kombiniertes Angebot': 'TTG 2 Z1',
       'Textiles und Technisches Gestalten 2 Zyklus 1 Kombiniertes Angebot (inkl. BIL)': 'TTG 2 Z1 (BIL)',
       'Textiles und Technisches Gestalten 2 Zyklus 2 Kombiniertes Angebot': 'TTG 2 Z2',
