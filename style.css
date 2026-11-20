@@ -1231,3 +1231,33 @@ button:hover { background: var(--phbern-red-dark); }
   .week-grid { font-size: 10px; }
   .topbar-meta { font-size: 10px; gap: 8px; }
 }
+
+/* ---------- Schmale Fenster (Bildschirm, nicht Druck) ---------- */
+/* Tab-Beschriftung nie umbrechen, Tabs bei Platzmangel auf zweite Zeile */
+.tab { white-space: nowrap; }
+.tabs { flex-wrap: wrap; }
+@media screen and (max-width: 1250px) {
+  /* Datenstand und Hinweise unter die Tabs, linksbündig, statt rechts gequetscht */
+  .topbar { flex-wrap: wrap; }
+  .topbar-meta {
+    flex-basis: 100%;
+    margin-left: 0;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .topbar-disclaimer { max-width: none; }
+}
+@media screen {
+  /* Aushang-Raster nicht unter Lesbarkeit stauchen, sondern seitlich scrollen */
+  .aushang { overflow-x: auto; }
+  .au-grid { min-width: 820px; }
+}
+@media screen and (max-width: 700px) {
+  .aushang { padding: 12px; }
+  .au-top-row { flex-direction: column-reverse; gap: 8px; }
+}
+@media screen and (max-width: 900px) {
+  /* Semester-Raster (27 KW pro Tag) braucht Breite, sonst überlappen die KW-Zahlen */
+  #view-halfyear { overflow-x: auto; }
+  #view-halfyear .over-grid { min-width: 900px; }
+}
