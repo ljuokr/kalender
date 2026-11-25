@@ -66,6 +66,9 @@ jobs:
                 D=$(echo "$A" | sed -E 's/Raumkalender-([0-9-]+)\.html/\1/')
                 if [ "$D" \< "$CUTOFF" ]; then
                   echo "Loesche altes Asset: $A"
-                  gh release delete-asset "$TAG" "$A" -y
+                  # Aufräumen darf den Lauf nicht rot machen (GitHub-API liefert
+                  # gelegentlich 502). Der nächste Lauf holt das Löschen nach.
+                  gh release delete-asset "$TAG" "$A" -y \
+                    || echo "::warning::Löschen von $A fehlgeschlagen, nächster Lauf räumt auf."
                 fi
               done
